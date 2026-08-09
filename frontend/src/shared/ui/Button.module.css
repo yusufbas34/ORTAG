@@ -1,0 +1,40 @@
+.btn {
+  width: 100%;
+  border: none;
+  padding: 16px;
+  border-radius: var(--radius-md);
+  font-size: 1.05rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+}
+
+.btn:active {
+  transform: scale(0.98);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.primary {
+  background: var(--primary);
+  color: #ffffff;
+  box-shadow: 0 8px 20px rgba(0, 210, 106, 0.3);
+}
+
+.primary:active:not(:disabled) {
+  background: var(--primary-dark);
+}
+
+.ghost {
+  background: var(--gray-light);
+  color: var(--text-main);
+  box-shadow: none;
+}

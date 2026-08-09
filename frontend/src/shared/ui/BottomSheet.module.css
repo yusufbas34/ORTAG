@@ -1,0 +1,22 @@
+.sheet {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #ffffff;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  padding: 12px 20px calc(24px + var(--safe-bottom)) 20px;
+  z-index: 20;
+  box-shadow: 0 -10px 25px rgba(0, 0, 0, 0.08);
+  transition: transform 0.3s ease;
+  max-height: 70%;
+  overflow-y: auto;
+}
+
+.handle {
+  width: 40px;
+  height: 5px;
+  background: var(--gray-border);
+  border-radius: 10px;
+  margin: 0 auto 16px auto;
+}
