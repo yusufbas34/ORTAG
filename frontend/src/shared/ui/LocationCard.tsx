@@ -23,8 +23,9 @@ export function LocationCard({ rows }: LocationCardProps) {
           <div className={styles.row}>
             <div className={[styles.dot, styles[row.dot]].join(' ')} />
             <div className={styles.text}>
-              <label>{row.label}</label>
+              <label htmlFor={`location-${row.key}`}>{row.label}</label>
               <input
+                id={`location-${row.key}`}
                 type="text"
                 value={row.value}
                 readOnly={row.readOnly}

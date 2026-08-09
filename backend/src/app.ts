@@ -2,6 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import { authRouter } from './modules/auth/routes.js';
+import { geocodeRouter } from './modules/geocode/routes.js';
+import { ridesRouter } from './modules/rides/routes.js';
 
 export function createApp() {
   const app = express();
@@ -15,6 +17,8 @@ export function createApp() {
   });
 
   app.use('/api/auth', authRouter);
+  app.use('/api/geocode', geocodeRouter);
+  app.use('/api/rides', ridesRouter);
 
   return app;
 }

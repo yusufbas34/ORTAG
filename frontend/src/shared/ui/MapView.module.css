@@ -1,47 +1,45 @@
-.mapBg {
+.mapWrapper {
   position: absolute;
   inset: 0;
-  width: 100%;
-  height: 100%;
-  background-color: #e5e3df;
-  background-image:
-    radial-gradient(#cbd5e1 2px, transparent 2px),
-    linear-gradient(to right, #e2e8f0 1px, transparent 1px),
-    linear-gradient(to bottom, #e2e8f0 1px, transparent 1px);
-  background-size: 30px 30px, 60px 60px, 60px 60px;
   z-index: 1;
 }
 
-.marker {
-  position: absolute;
-  z-index: 5;
-  transform: translate(-50%, -100%);
+.map {
+  width: 100%;
+  height: 100%;
 }
 
-.pinPulse {
-  width: 20px;
-  height: 20px;
-  background: rgba(0, 210, 106, 0.3);
-  border-radius: 50%;
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  animation: pulse 2s infinite;
+.pinIconWrapper {
+  background: transparent;
+  border: none;
 }
 
-@keyframes pulse {
-  0% { transform: translate(-50%, -50%) scale(0.8); opacity: 1; }
-  100% { transform: translate(-50%, -50%) scale(2.5); opacity: 0; }
+.pin {
+  width: 32px;
+  height: 32px;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.pin i {
+  transform: rotate(45deg);
+  color: #fff;
+  font-size: 0.9rem;
 }
 
 .carMarker {
-  position: absolute;
-  z-index: 4;
-  font-size: 1.2rem;
-  color: var(--dark);
+  width: 30px;
+  height: 30px;
   background: #fff;
-  padding: 6px;
   border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  color: var(--dark);
+  font-size: 1rem;
 }
