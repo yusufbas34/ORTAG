@@ -1,0 +1,138 @@
+.page {
+  min-height: 100dvh;
+  background: var(--gray-light);
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  background: #fff;
+  padding: calc(var(--safe-top) + 24px) 20px 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.header h1 {
+  font-size: 1.1rem;
+  color: var(--text-main);
+}
+
+.header p {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.logoutBtn {
+  background: none;
+  border: none;
+  color: var(--danger);
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.body {
+  flex: 1;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 480px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.card {
+  background: #fff;
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.cardTitle {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.baseRate {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.sliderRow {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.sliderRow input[type='range'] {
+  flex: 1;
+}
+
+.percentValue {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--primary-dark);
+  min-width: 60px;
+  text-align: right;
+}
+
+.preview {
+  display: flex;
+  gap: 12px;
+}
+
+.previewCard {
+  flex: 1;
+  background: var(--gray-light);
+  border-radius: var(--radius-md);
+  padding: 14px;
+  text-align: center;
+}
+
+.previewCard .label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.previewCard .value {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-top: 4px;
+}
+
+.saveMsg {
+  font-size: 0.85rem;
+  color: var(--primary-dark);
+  font-weight: 600;
+}
+
+.historyItem {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--gray-border);
+  font-size: 0.85rem;
+}
+
+.historyItem:last-child {
+  border-bottom: none;
+}
+
+.historyItem .percent {
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.historyItem .meta {
+  color: var(--text-muted);
+  text-align: right;
+}

@@ -9,6 +9,9 @@ import { DriverRegister } from './features/auth/DriverRegister';
 import { AdminLogin } from './features/auth/AdminLogin';
 import { ProtectedRoute } from './features/auth/ProtectedRoute';
 import { RiderHome } from './features/rider/RiderHome';
+import { ChooseDriver } from './features/rider/ChooseDriver';
+import { PlanRide } from './features/rider/PlanRide';
+import { PlannedRides } from './features/rider/PlannedRides';
 import { DriverHome } from './features/driver/DriverHome';
 import { AdminHome } from './features/admin/AdminHome';
 
@@ -39,6 +42,30 @@ export function App() {
           element={
             <ProtectedRoute role="RIDER" redirectTo="/rider/login">
               <RiderHome />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/rider/choose-driver"
+          element={
+            <ProtectedRoute role="RIDER" redirectTo="/rider/login">
+              <ChooseDriver />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/rider/plan"
+          element={
+            <ProtectedRoute role="RIDER" redirectTo="/rider/login">
+              <PlanRide />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/rider/planned"
+          element={
+            <ProtectedRoute role="RIDER" redirectTo="/rider/login">
+              <PlannedRides />
             </ProtectedRoute>
           }
         />

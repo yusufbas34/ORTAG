@@ -1,0 +1,134 @@
+.page {
+  min-height: 100dvh;
+  background: var(--gray-light);
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  background: #fff;
+  padding: calc(var(--safe-top) + 24px) 20px 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.greeting h1 {
+  font-size: 1.1rem;
+  color: var(--text-main);
+}
+
+.greeting p {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.toggleLabel {
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.toggleLabel.online {
+  color: var(--primary-dark);
+}
+
+.toggleLabel.offline {
+  color: var(--text-muted);
+}
+
+.switch {
+  width: 50px;
+  height: 28px;
+  border-radius: 20px;
+  border: none;
+  background: var(--gray-border);
+  position: relative;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.switch.on {
+  background: var(--primary);
+}
+
+.switch .knob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.2s;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.switch.on .knob {
+  transform: translateX(22px);
+}
+
+.body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 20px;
+  text-align: center;
+  gap: 12px;
+}
+
+.body i {
+  font-size: 2.5rem;
+  color: var(--gray-border);
+}
+
+.body h2 {
+  font-size: 1.05rem;
+  color: var(--text-main);
+}
+
+.body p {
+  color: var(--text-muted);
+  max-width: 280px;
+}
+
+.activeRideCard {
+  width: 100%;
+  max-width: 380px;
+  background: #fff;
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  text-align: left;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.activeRideCard .badge {
+  align-self: flex-start;
+  background: rgba(0, 210, 106, 0.12);
+  color: var(--primary-dark);
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 20px;
+}
+
+.logoutBtn {
+  margin-top: 20px;
+  background: none;
+  border: none;
+  color: var(--danger);
+  font-weight: 700;
+  cursor: pointer;
+}

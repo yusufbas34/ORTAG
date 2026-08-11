@@ -1,0 +1,61 @@
+.card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  border: 2px solid var(--gray-border);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.card:active {
+  border-color: var(--primary);
+  background-color: rgba(0, 210, 106, 0.04);
+}
+
+.avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #E2E8F0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  color: var(--dark);
+  flex-shrink: 0;
+}
+
+.details {
+  flex: 1;
+  min-width: 0;
+}
+
+.details h4 {
+  font-size: 1rem;
+  color: var(--text-main);
+  font-weight: 700;
+}
+
+.details p {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.meta {
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.meta .distance {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.meta .eta {
+  font-size: 0.75rem;
+  color: var(--primary-dark);
+  font-weight: 600;
+}
