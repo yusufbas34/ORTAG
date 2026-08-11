@@ -17,6 +17,42 @@ enum VehicleType {
   XL
 }
 
+enum DispatchMode {
+  BROADCAST
+  DIRECT
+}
+
+enum PaymentMethod {
+  CASH
+  IBAN_TRANSFER
+}
+
+enum RideStatus {
+  REQUESTED
+  DISPATCHING
+  ACCEPTED
+  DRIVER_ARRIVING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  NO_DRIVER_FOUND
+}
+
+enum RideOfferStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  EXPIRED
+}
+
+enum ReservationStatus {
+  PENDING_DISPATCH
+  CONFIRMED
+  CANCELLED
+  EXPIRED
+  COMPLETED
+}
+
 model User {
   id            String   @id @default(cuid())
   email         String   @unique
@@ -29,6 +65,16 @@ model User {
 
   riderProfile  RiderProfile?
   driverProfile DriverProfile?
+
+  ridesAsRider  Ride[]      @relation("RiderRides")
+  ridesAsDriver Ride[]      @relation("DriverRides")
+  rideOffers    RideOffer[]
+
+  reservationsAsRider  Reservation[]      @relation("RiderReservations")
+  reservationsAsDriver Reservation[]      @relation("DriverReservations")
+  reservationOffers    ReservationOffer[]
+
+  pricingConfigHistoryEntries PricingConfigHistory[]
 }
 
 model RiderProfile {
@@ -45,6 +91,15 @@ model PricingConfig {
   updatedAt         DateTime @updatedAt
 }
 
+model PricingConfigHistory {
+  id                String   @id @default(cuid())
+  baseRatePerKm     Float
+  adjustmentPercent Float
+  updatedByUserId   String
+  updatedBy         User     @relation(fields: [updatedByUserId], references: [id])
+  createdAt         DateTime @default(now())
+}
+
 model DriverProfile {
   id             String      @id @default(cuid())
   userId         String      @unique
@@ -57,4 +112,81 @@ model DriverProfile {
   currentLat     Float?
   currentLng     Float?
   lastLocationAt DateTime?
+}
+
+model Ride {
+  id              String        @id @default(cuid())
+  riderId         String
+  rider           User          @relation("RiderRides", fields: [riderId], references: [id])
+  driverId        String?
+  driver          User?         @relation("DriverRides", fields: [driverId], references: [id])
+  pickupLat       Float
+  pickupLng       Float
+  pickupAddress   String
+  dropoffLat      Float
+  dropoffLng      Float
+  dropoffAddress  String
+  vehicleType     VehicleType
+  distanceKm      Float
+  durationMin     Float
+  priceTry        Int
+  dispatchMode    DispatchMode
+  status          RideStatus    @default(REQUESTED)
+  paymentMethod   PaymentMethod
+  cancelledReason String?
+  createdAt       DateTime      @default(now())
+  acceptedAt      DateTime?
+  startedAt       DateTime?
+  completedAt     DateTime?
+
+  offers RideOffer[]
+}
+
+model RideOffer {
+  id          String          @id @default(cuid())
+  rideId      String
+  ride        Ride            @relation(fields: [rideId], references: [id], onDelete: Cascade)
+  driverId    String
+  driver      User            @relation(fields: [driverId], references: [id])
+  status      RideOfferStatus @default(PENDING)
+  sentAt      DateTime        @default(now())
+  respondedAt DateTime?
+}
+
+model Reservation {
+  id               String             @id @default(cuid())
+  riderId          String
+  rider            User               @relation("RiderReservations", fields: [riderId], references: [id])
+  assignedDriverId String?
+  assignedDriver   User?              @relation("DriverReservations", fields: [assignedDriverId], references: [id])
+  pickupLat        Float
+  pickupLng        Float
+  pickupAddress    String
+  dropoffLat       Float
+  dropoffLng       Float
+  dropoffAddress   String
+  vehicleType      VehicleType
+  distanceKm       Float
+  durationMin      Float
+  priceTry         Int
+  dispatchMode     DispatchMode
+  scheduledFor     DateTime
+  status           ReservationStatus  @default(PENDING_DISPATCH)
+  paymentMethod    PaymentMethod
+  cancelledReason  String?
+  createdAt        DateTime           @default(now())
+  confirmedAt      DateTime?
+
+  offers ReservationOffer[]
+}
+
+model ReservationOffer {
+  id            String          @id @default(cuid())
+  reservationId String
+  reservation   Reservation     @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  driverId      String
+  driver        User            @relation(fields: [driverId], references: [id])
+  status        RideOfferStatus @default(PENDING)
+  sentAt        DateTime        @default(now())
+  respondedAt   DateTime?
 }
