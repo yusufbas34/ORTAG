@@ -1,0 +1,126 @@
+.page {
+  min-height: 100dvh;
+  background: var(--gray-light);
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: calc(var(--safe-top) + 20px) 20px 20px;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.header h1 {
+  font-size: 1.1rem;
+  color: var(--text-main);
+}
+
+.backBtn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  background: var(--gray-light);
+  color: var(--text-main);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.body {
+  flex: 1;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow-y: auto;
+}
+
+.modeToggle {
+  display: flex;
+  gap: 10px;
+}
+
+.modeOption {
+  flex: 1;
+  border: 2px solid var(--gray-border);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  text-align: center;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: #fff;
+  cursor: pointer;
+}
+
+.modeOption.active {
+  border-color: var(--primary);
+  color: var(--primary-dark);
+  background: rgba(0, 210, 106, 0.06);
+}
+
+.driverList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.driverCheck {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 2px solid var(--gray-border);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  cursor: pointer;
+}
+
+.driverCheck.checked {
+  border-color: var(--primary);
+  background: rgba(0, 210, 106, 0.06);
+}
+
+.driverCheck input {
+  width: 18px;
+  height: 18px;
+}
+
+.driverCheck .info {
+  flex: 1;
+}
+
+.driverCheck .info strong {
+  display: block;
+  font-size: 0.9rem;
+  color: var(--text-main);
+}
+
+.driverCheck .info span {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.summary {
+  background: #fff;
+  border-radius: var(--radius-md);
+  padding: 16px;
+  font-size: 0.9rem;
+  color: var(--text-main);
+  display: flex;
+  justify-content: space-between;
+}
+
+.error {
+  background: #FEF2F2;
+  color: var(--danger);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
