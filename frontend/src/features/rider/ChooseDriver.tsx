@@ -66,7 +66,7 @@ export function ChooseDriver() {
       </div>
 
       <div className={styles.list}>
-        {loading && <p className={styles.empty}>Yakınındaki şoförler aranıyor...</p>}
+        {loading && <p className={styles.empty}>Yakındaki şoförler aranıyor...</p>}
 
         {!loading && drivers.length === 0 && (
           <p className={styles.empty}>Şu an yakınında bu araç tipinde müsait şoför yok.</p>
