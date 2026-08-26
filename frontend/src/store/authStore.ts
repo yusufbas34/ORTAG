@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { apiClient, ApiError } from '../lib/apiClient';
+import { connectSocket, disconnectSocket } from '../lib/socketClient';
 
 export type UserRole = 'RIDER' | 'DRIVER' | 'ADMIN';
 
@@ -41,6 +42,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     try {
       const { user } = await apiClient.get<{ user: AuthUser }>('/auth/me');
       set({ user, status: 'ready' });
+      connectSocket();
     } catch {
       set({ user: null, status: 'ready' });
     }
@@ -51,6 +53,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     try {
       const { user } = await apiClient.post<{ user: AuthUser }>('/auth/login', { email, password });
       set({ user, status: 'ready' });
+      connectSocket();
       return user;
     } catch (err) {
       const message = err instanceof ApiError ? err.message : 'Giriş başarısız.';
@@ -64,6 +67,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     try {
       const { user } = await apiClient.post<{ user: AuthUser }>('/auth/register/rider', data);
       set({ user, status: 'ready' });
+      connectSocket();
       return user;
     } catch (err) {
       const message = err instanceof ApiError ? err.message : 'Kayıt başarısız.';
@@ -77,6 +81,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     try {
       const { user } = await apiClient.post<{ user: AuthUser }>('/auth/register/driver', data);
       set({ user, status: 'ready' });
+      connectSocket();
       return user;
     } catch (err) {
       const message = err instanceof ApiError ? err.message : 'Kayıt başarısız.';
@@ -87,6 +92,7 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   logout: async () => {
     await apiClient.post('/auth/logout');
+    disconnectSocket();
     set({ user: null });
   },
 
