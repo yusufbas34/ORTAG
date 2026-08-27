@@ -7,15 +7,28 @@ interface ActiveRideCardProps {
   ride: Ride;
   driver: DriverContactInfo | null;
   driverLocation: { lat: number; lng: number } | null;
+  driverEtaMin: number | null;
   cancelling: boolean;
+  isFavoriteDriver: boolean;
   onCancel: (reason: string) => void;
   onDismiss: () => void;
+  onToggleFavorite: () => void;
 }
 
 const WAITING_STATUSES = new Set(['REQUESTED', 'DISPATCHING']);
 const ON_THE_WAY_STATUSES = new Set(['ACCEPTED', 'DRIVER_ARRIVING', 'IN_PROGRESS']);
 
-export function ActiveRideCard({ ride, driver, driverLocation, cancelling, onCancel, onDismiss }: ActiveRideCardProps) {
+export function ActiveRideCard({
+  ride,
+  driver,
+  driverLocation,
+  driverEtaMin,
+  cancelling,
+  isFavoriteDriver,
+  onCancel,
+  onDismiss,
+  onToggleFavorite,
+}: ActiveRideCardProps) {
   const [showCancelForm, setShowCancelForm] = useState(false);
   const [reason, setReason] = useState('');
 
@@ -79,9 +92,23 @@ export function ActiveRideCard({ ride, driver, driverLocation, cancelling, onCan
 
       {driver && isOnTheWay && (
         <div className={styles.driverInfo}>
-          <div className={styles.driverName}>
-            {driver.name} • {driver.vehicleModel} • {driver.vehiclePlate}
+          <div className={styles.driverInfoRow}>
+            <div className={styles.driverName}>
+              {driver.name} • {driver.vehicleModel} • {driver.vehiclePlate}
+            </div>
+            <button
+              className={[styles.favoriteBtn, isFavoriteDriver ? styles.favoriteActive : ''].join(' ')}
+              onClick={onToggleFavorite}
+              aria-label={isFavoriteDriver ? 'Favorilerden çıkar' : 'Favorilere ekle'}
+            >
+              <i className={isFavoriteDriver ? 'fa-solid fa-heart' : 'fa-regular fa-heart'} />
+            </button>
           </div>
+          {driverEtaMin !== null && (
+            <div className={styles.etaText}>
+              {ride.status === 'IN_PROGRESS' ? 'Varış' : 'Şoför'} yaklaşık {driverEtaMin} dakika içinde
+            </div>
+          )}
         </div>
       )}
 

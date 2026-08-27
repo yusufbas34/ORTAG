@@ -18,12 +18,14 @@ import { getCurrentPosition } from '../../lib/geolocation';
 import { getSocket } from '../../lib/socketClient';
 import type {
   DriverContactInfo,
+  FavoriteDriver,
   LocationPoint,
   PaymentMethod,
   QuoteResponse,
   Reservation,
   Ride,
   RideStatus,
+  SavedAddress,
   VehicleType,
 } from './types';
 import styles from './RiderHome.module.css';
@@ -57,7 +59,10 @@ export function RiderHome() {
   const [dispatching, setDispatching] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const [driverLocation, setDriverLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [driverEtaMin, setDriverEtaMin] = useState<number | null>(null);
   const [upcomingReservation, setUpcomingReservation] = useState<Reservation | null>(null);
+  const [favoriteDriverIds, setFavoriteDriverIds] = useState<Set<string>>(new Set());
+  const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([]);
   const activeRideIdRef = useRef<string | null>(null);
 
   const activeInputValue = activeField === 'pickup' ? pickupInput : activeField === 'dropoff' ? dropoffInput : '';
@@ -99,6 +104,24 @@ export function RiderHome() {
           .sort((a, b) => new Date(a.scheduledFor).getTime() - new Date(b.scheduledFor).getTime());
         setUpcomingReservation(upcoming[0] ?? null);
       })
+      .catch(() => {});
+  }, []);
+
+  // Favorite drivers — loaded once so the active-ride card and driver lists
+  // can show/toggle heart state without an extra round-trip per render.
+  useEffect(() => {
+    apiClient
+      .get<{ favorites: FavoriteDriver[] }>('/favorites')
+      .then(({ favorites }) => setFavoriteDriverIds(new Set(favorites.map((f) => f.driverId))))
+      .catch(() => {});
+  }, []);
+
+  // Saved addresses (Ev/İş/...) — offered as one-tap quick picks before the
+  // rider even starts typing a pickup/dropoff.
+  useEffect(() => {
+    apiClient
+      .get<{ addresses: SavedAddress[] }>('/saved-addresses')
+      .then(({ addresses }) => setSavedAddresses(addresses))
       .catch(() => {});
   }, []);
 
@@ -184,9 +207,10 @@ export function RiderHome() {
       }
     }
 
-    function handleDriverLocation(payload: { rideId: string; lat: number; lng: number }) {
+    function handleDriverLocation(payload: { rideId: string; lat: number; lng: number; etaMin?: number }) {
       if (payload.rideId !== activeRideIdRef.current) return;
       setDriverLocation({ lat: payload.lat, lng: payload.lng });
+      if (typeof payload.etaMin === 'number') setDriverEtaMin(payload.etaMin);
     }
 
     socket.on('ride:status', handleStatus);
@@ -210,6 +234,7 @@ export function RiderHome() {
       });
       setAcceptedDriver(null);
       setDriverLocation(null);
+      setDriverEtaMin(null);
       setActiveRide(ride);
     } finally {
       setDispatching(false);
@@ -238,6 +263,33 @@ export function RiderHome() {
     setActiveRide(null);
     setAcceptedDriver(null);
     setDriverLocation(null);
+    setDriverEtaMin(null);
+  }
+
+  async function handleToggleFavorite() {
+    const driverId = activeRide?.driverId;
+    if (!driverId) return;
+    const isFavorite = favoriteDriverIds.has(driverId);
+    setFavoriteDriverIds((prev) => {
+      const next = new Set(prev);
+      if (isFavorite) next.delete(driverId);
+      else next.add(driverId);
+      return next;
+    });
+    try {
+      if (isFavorite) {
+        await apiClient.del(`/favorites/${driverId}`);
+      } else {
+        await apiClient.post('/favorites', { driverId });
+      }
+    } catch {
+      setFavoriteDriverIds((prev) => {
+        const next = new Set(prev);
+        if (isFavorite) next.add(driverId);
+        else next.delete(driverId);
+        return next;
+      });
+    }
   }
 
   function selectSuggestion(field: 'pickup' | 'dropoff', suggestion: AddressSuggestion) {
@@ -323,9 +375,12 @@ export function RiderHome() {
             ride={activeRide}
             driver={acceptedDriver}
             driverLocation={driverLocation}
+            driverEtaMin={driverEtaMin}
             cancelling={cancelling}
+            isFavoriteDriver={!!activeRide.driverId && favoriteDriverIds.has(activeRide.driverId)}
             onCancel={handleCancel}
             onDismiss={handleDismissRide}
+            onToggleFavorite={handleToggleFavorite}
           />
         )}
 
@@ -336,6 +391,17 @@ export function RiderHome() {
             </div>
 
             <LocationCard rows={rows} />
+
+            {activeField && debouncedQuery.trim().length < 3 && savedAddresses.length > 0 && (
+              <div className={styles.savedAddressChips}>
+                {savedAddresses.map((a) => (
+                  <button key={a.id} type="button" className={styles.savedAddressChip} onClick={() => selectSuggestion(activeField, a)}>
+                    <i className="fa-solid fa-map-pin" />
+                    {a.label}
+                  </button>
+                ))}
+              </div>
+            )}
 
             {activeField && (
               <AddressSuggestions suggestions={suggestions} onSelect={(s) => selectSuggestion(activeField, s)} />

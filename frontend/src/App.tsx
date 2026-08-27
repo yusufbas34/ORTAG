@@ -12,7 +12,11 @@ import { RiderHome } from './features/rider/RiderHome';
 import { ChooseDriver } from './features/rider/ChooseDriver';
 import { PlanRide } from './features/rider/PlanRide';
 import { PlannedRides } from './features/rider/PlannedRides';
+import { FavoriteDrivers } from './features/rider/FavoriteDrivers';
+import { RideHistory } from './features/rider/RideHistory';
+import { SavedAddresses } from './features/rider/SavedAddresses';
 import { DriverHome } from './features/driver/DriverHome';
+import { DriverHistory } from './features/driver/DriverHistory';
 import { AdminHome } from './features/admin/AdminHome';
 
 export function App() {
@@ -70,10 +74,42 @@ export function App() {
           }
         />
         <Route
+          path="/rider/favorites"
+          element={
+            <ProtectedRoute role="RIDER" redirectTo="/rider/login">
+              <FavoriteDrivers />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/rider/history"
+          element={
+            <ProtectedRoute role="RIDER" redirectTo="/rider/login">
+              <RideHistory />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/rider/addresses"
+          element={
+            <ProtectedRoute role="RIDER" redirectTo="/rider/login">
+              <SavedAddresses />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/driver"
           element={
             <ProtectedRoute role="DRIVER" redirectTo="/driver/login">
               <DriverHome />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/driver/history"
+          element={
+            <ProtectedRoute role="DRIVER" redirectTo="/driver/login">
+              <DriverHistory />
             </ProtectedRoute>
           }
         />

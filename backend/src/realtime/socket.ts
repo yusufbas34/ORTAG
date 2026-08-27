@@ -3,6 +3,7 @@ import { Server as SocketIOServer } from 'socket.io';
 import type { UserRole } from '@prisma/client';
 import { verifyAuthToken } from '../lib/jwt.js';
 import { prisma } from '../lib/prismaClient.js';
+import { haversineKm, estimateEtaMin } from '../lib/geo.js';
 
 let io: SocketIOServer | null = null;
 
@@ -55,12 +56,27 @@ export function createSocketServer(httpServer: HttpServer): SocketIOServer {
         prisma.ride
           .findFirst({
             where: { driverId: userId, status: { in: ['ACCEPTED', 'DRIVER_ARRIVING', 'IN_PROGRESS'] } },
-            select: { id: true, riderId: true },
+            select: {
+              id: true,
+              riderId: true,
+              status: true,
+              pickupLat: true,
+              pickupLng: true,
+              dropoffLat: true,
+              dropoffLng: true,
+            },
           })
           .then((ride) => {
-            if (ride) {
-              emitToRider(ride.riderId, 'ride:driver_location', { rideId: ride.id, lat: payload.lat, lng: payload.lng });
-            }
+            if (!ride) return;
+            // Before pickup the rider cares how far the driver still is from
+            // them; once the trip has started, the countdown switches to the
+            // remaining distance to the destination instead.
+            const target =
+              ride.status === 'IN_PROGRESS'
+                ? { lat: ride.dropoffLat, lng: ride.dropoffLng }
+                : { lat: ride.pickupLat, lng: ride.pickupLng };
+            const etaMin = estimateEtaMin(haversineKm(payload.lat, payload.lng, target.lat, target.lng));
+            emitToRider(ride.riderId, 'ride:driver_location', { rideId: ride.id, lat: payload.lat, lng: payload.lng, etaMin });
           })
           .catch(() => {});
       });

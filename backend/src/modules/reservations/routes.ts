@@ -106,6 +106,22 @@ reservationsRouter.get('/mine', requireAuth, requireRole('RIDER'), async (req, r
   res.json({ reservations: reservations.map(serializeReservation) });
 });
 
+const HISTORY_STATUSES = ['COMPLETED', 'CANCELLED', 'EXPIRED'] as const;
+
+// Past reservations for either side, mirroring /rides/history's shape.
+reservationsRouter.get('/history', requireAuth, async (req, res) => {
+  const { userId, role } = req.auth!;
+  const reservations = await prisma.reservation.findMany({
+    where: {
+      status: { in: [...HISTORY_STATUSES] },
+      ...(role === 'DRIVER' ? { assignedDriverId: userId } : { riderId: userId }),
+    },
+    orderBy: { scheduledFor: 'desc' },
+    take: 50,
+  });
+  res.json({ reservations: reservations.map(serializeReservation) });
+});
+
 reservationsRouter.get('/:id', requireAuth, async (req, res) => {
   const reservation = await prisma.reservation.findUnique({ where: { id: req.params.id } });
   if (!reservation || (reservation.riderId !== req.auth!.userId && reservation.assignedDriverId !== req.auth!.userId)) {

@@ -97,3 +97,28 @@
   color: var(--text-muted);
   white-space: nowrap;
 }
+
+.savedAddressChips {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: -6px 0 14px;
+}
+
+.savedAddressChip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--gray-border);
+  background: #fff;
+  color: var(--text-main);
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 7px 12px;
+  border-radius: 20px;
+  cursor: pointer;
+}
+
+.savedAddressChip i {
+  color: var(--primary-dark);
+}

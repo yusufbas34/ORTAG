@@ -20,7 +20,8 @@ driversRouter.get('/nearby', requireAuth, async (req, res) => {
     return;
   }
 
-  const drivers = await findNearbyDrivers(lat, lng, vehicleType as VehicleType, 20);
+  const riderId = req.auth!.role === 'RIDER' ? req.auth!.userId : undefined;
+  const drivers = await findNearbyDrivers(lat, lng, vehicleType as VehicleType, 20, riderId);
   res.json({ drivers });
 });
 
@@ -36,10 +37,12 @@ driversRouter.get('/all', requireAuth, async (req, res) => {
     return;
   }
 
+  const riderId = req.auth!.role === 'RIDER' ? req.auth!.userId : undefined;
   const drivers = await findAllDriversForReservation(
     vehicleType as VehicleType,
     Number.isFinite(lat) ? lat : undefined,
     Number.isFinite(lng) ? lng : undefined,
+    riderId,
   );
   res.json({ drivers });
 });

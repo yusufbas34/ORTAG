@@ -75,6 +75,43 @@ model User {
   reservationOffers    ReservationOffer[]
 
   pricingConfigHistoryEntries PricingConfigHistory[]
+
+  favoritesGiven    Favorite[]         @relation("FavoritesGiven")
+  favoritedBy       Favorite[]         @relation("FavoritesReceived")
+  savedAddresses    SavedAddress[]
+  pushSubscriptions PushSubscription[]
+}
+
+model Favorite {
+  id        String   @id @default(cuid())
+  riderId   String
+  rider     User     @relation("FavoritesGiven", fields: [riderId], references: [id], onDelete: Cascade)
+  driverId  String
+  driver    User     @relation("FavoritesReceived", fields: [driverId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([riderId, driverId])
+}
+
+model SavedAddress {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  label     String
+  address   String
+  lat       Float
+  lng       Float
+  createdAt DateTime @default(now())
+}
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
 }
 
 model RiderProfile {

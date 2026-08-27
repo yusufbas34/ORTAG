@@ -4,6 +4,7 @@ import { requireAuth } from '../../middleware/auth.js';
 import { requireRole } from '../../middleware/requireRole.js';
 import { emitToDriver, emitToRider } from '../../realtime/socket.js';
 import { serializeReservation } from '../../lib/serializeReservation.js';
+import { sendPushToUser } from '../../lib/push.js';
 
 export const reservationOffersRouter = Router();
 
@@ -62,6 +63,10 @@ reservationOffersRouter.post('/:id/accept', requireAuth, requireRole('DRIVER'), 
       ? { name: driverProfile.user.name, vehiclePlate: driverProfile.vehiclePlate, vehicleModel: driverProfile.vehicleModel }
       : null,
   });
+  sendPushToUser(reservation.riderId, {
+    title: 'Randevun onaylandı!',
+    body: driverProfile ? `${driverProfile.user.name} randevunu kabul etti.` : 'Bir şoför randevunu kabul etti.',
+  }).catch(() => {});
 
   res.json({ reservation: serializeReservation(reservation) });
 });

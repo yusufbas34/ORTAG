@@ -31,6 +31,24 @@
   gap: 10px;
 }
 
+.bellBtn {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: none;
+  background: var(--gray-light);
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bellBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .toggleLabel {
   font-size: 0.85rem;
   font-weight: 700;

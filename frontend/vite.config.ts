@@ -7,7 +7,13 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.ts',
       registerType: 'autoUpdate',
+      injectManifest: {
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
+      },
       includeAssets: ['apple-touch-icon.png', 'favicon-32.png'],
       manifest: {
         name: 'YOL',
@@ -22,30 +28,6 @@ export default defineConfig({
           { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
           { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
           { src: '/icons/icon-512-maskable.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
-        ],
-      },
-      workbox: {
-        // API calls always need a live network round-trip (fares, dispatch,
-        // live status) — NetworkFirst just gives a short offline fallback,
-        // it never serves stale route/price data while online.
-        runtimeCaching: [
-          {
-            urlPattern: ({ url }) => url.pathname.startsWith('/api/'),
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'api-cache',
-              networkTimeoutSeconds: 8,
-              expiration: { maxEntries: 50, maxAgeSeconds: 60 },
-            },
-          },
-          {
-            urlPattern: ({ url }) => url.hostname.endsWith('tile.openstreetmap.org'),
-            handler: 'StaleWhileRevalidate',
-            options: {
-              cacheName: 'osm-tiles',
-              expiration: { maxEntries: 200, maxAgeSeconds: 7 * 24 * 60 * 60 },
-            },
-          },
         ],
       },
     }),

@@ -66,6 +66,7 @@ export interface DriverSummary {
   currentLng: number;
   distanceKm: number;
   etaMin: number;
+  isFavorite: boolean;
 }
 
 export interface ReservationDriverOption {
@@ -77,6 +78,28 @@ export interface ReservationDriverOption {
   isAvailable: boolean;
   distanceKm: number | null;
   etaMin: number | null;
+  isFavorite: boolean;
+}
+
+export interface FavoriteDriver {
+  driverId: string;
+  name: string;
+  vehiclePlate: string;
+  vehicleModel: string;
+  vehicleType: VehicleType;
+  isAvailable: boolean;
+}
+
+export interface SavedAddress {
+  id: string;
+  label: string;
+  address: string;
+  lat: number;
+  lng: number;
+}
+
+export interface RideHistoryItem extends Ride {
+  otherParty: { name: string; vehiclePlate?: string | null; vehicleModel?: string | null } | null;
 }
 
 export type ReservationStatus = 'PENDING_DISPATCH' | 'CONFIRMED' | 'CANCELLED' | 'EXPIRED' | 'COMPLETED';

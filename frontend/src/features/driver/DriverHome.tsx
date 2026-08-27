@@ -4,6 +4,7 @@ import { useAuthStore } from '../../store/authStore';
 import { apiClient } from '../../lib/apiClient';
 import { getCurrentPosition } from '../../lib/geolocation';
 import { getSocket } from '../../lib/socketClient';
+import { enablePushNotifications } from '../../lib/push';
 import { IncomingOfferOverlay } from './IncomingOfferOverlay';
 import { DriverReservations } from './DriverReservations';
 import { MiniMap } from '../../shared/ui/MiniMap';
@@ -33,6 +34,7 @@ export function DriverHome() {
   const [cancelReason, setCancelReason] = useState('');
   const [locationWarning, setLocationWarning] = useState<string | null>(null);
   const [ownLocation, setOwnLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [pushEnabling, setPushEnabling] = useState(false);
   const locationWatchIdRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -195,6 +197,15 @@ export function DriverHome() {
     setActiveRide(null);
   }
 
+  async function handleEnablePush() {
+    setPushEnabling(true);
+    try {
+      await enablePushNotifications();
+    } finally {
+      setPushEnabling(false);
+    }
+  }
+
   return (
     <div className={styles.page}>
       <div className={styles.header}>
@@ -203,6 +214,23 @@ export function DriverHome() {
           <p>{profile ? `${profile.vehicleModel} • ${profile.vehiclePlate}` : ''}</p>
         </div>
         <div className={styles.toggle}>
+          <button
+            className={styles.bellBtn}
+            onClick={() => navigate('/driver/history')}
+            aria-label="Yolculuk Geçmişi"
+            title="Yolculuk Geçmişi"
+          >
+            <i className="fa-solid fa-clock-rotate-left" />
+          </button>
+          <button
+            className={styles.bellBtn}
+            onClick={handleEnablePush}
+            disabled={pushEnabling}
+            aria-label="Bildirimleri Aç"
+            title="Bildirimleri Aç"
+          >
+            <i className="fa-solid fa-bell" />
+          </button>
           <span className={[styles.toggleLabel, profile?.isAvailable ? styles.online : styles.offline].join(' ')}>
             {profile?.isAvailable ? 'Çevrimiçi' : 'Çevrimdışı'}
           </span>

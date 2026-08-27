@@ -6,17 +6,33 @@ interface DriverListItemProps {
   vehicleModel: string;
   distanceKm: number;
   etaMin: number;
+  isFavorite?: boolean;
+  favoriteBusy?: boolean;
   onClick?: () => void;
+  onToggleFavorite?: () => void;
 }
 
-export function DriverListItem({ name, vehiclePlate, vehicleModel, distanceKm, etaMin, onClick }: DriverListItemProps) {
+export function DriverListItem({
+  name,
+  vehiclePlate,
+  vehicleModel,
+  distanceKm,
+  etaMin,
+  isFavorite,
+  favoriteBusy,
+  onClick,
+  onToggleFavorite,
+}: DriverListItemProps) {
   return (
     <div className={styles.card} onClick={onClick} role="button" tabIndex={0}>
       <div className={styles.avatar}>
         <i className="fa-solid fa-user" />
       </div>
       <div className={styles.details}>
-        <h4>{name}</h4>
+        <h4>
+          {name}
+          {isFavorite && <i className={['fa-solid fa-star', styles.favoriteStar].join(' ')} />}
+        </h4>
         <p>
           {vehicleModel} • {vehiclePlate}
         </p>
@@ -25,6 +41,19 @@ export function DriverListItem({ name, vehiclePlate, vehicleModel, distanceKm, e
         <div className={styles.distance}>{distanceKm} km</div>
         <div className={styles.eta}>{etaMin} dk</div>
       </div>
+      {onToggleFavorite && (
+        <button
+          className={[styles.favoriteBtn, isFavorite ? styles.favoriteActive : ''].join(' ')}
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleFavorite();
+          }}
+          disabled={favoriteBusy}
+          aria-label={isFavorite ? 'Favorilerden çıkar' : 'Favorilere ekle'}
+        >
+          <i className={isFavorite ? 'fa-solid fa-heart' : 'fa-regular fa-heart'} />
+        </button>
+      )}
     </div>
   );
 }

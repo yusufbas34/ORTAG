@@ -8,8 +8,10 @@ import { getActivePricingConfig, computePrice } from '../../lib/pricing.js';
 import { dispatchRide } from '../../lib/dispatch.js';
 import { serializeRide, serializeDriverInfo } from '../../lib/serializeRide.js';
 import { emitToDriver, emitToRider } from '../../realtime/socket.js';
+import { sendPushToUser } from '../../lib/push.js';
 
 const ACTIVE_STATUSES = ['REQUESTED', 'DISPATCHING', 'ACCEPTED', 'DRIVER_ARRIVING', 'IN_PROGRESS'] as const;
+const HISTORY_STATUSES = ['COMPLETED', 'CANCELLED', 'NO_DRIVER_FOUND'] as const;
 
 async function getDriverInfoForRide(driverId: string | null) {
   if (!driverId) return null;
@@ -149,6 +151,41 @@ ridesRouter.get('/active', requireAuth, async (req, res) => {
   res.json({ ride: serializeRide(ride), driver });
 });
 
+// Past rides (completed, cancelled, or never matched) for either side — the
+// "otherParty" label differs by role since a rider looks up the driver's
+// vehicle info while a driver only needs the rider's name.
+ridesRouter.get('/history', requireAuth, async (req, res) => {
+  const { userId, role } = req.auth!;
+  const rides = await prisma.ride.findMany({
+    where: {
+      status: { in: [...HISTORY_STATUSES] },
+      ...(role === 'DRIVER' ? { driverId: userId } : { riderId: userId }),
+    },
+    orderBy: { createdAt: 'desc' },
+    take: 50,
+    include: {
+      rider: true,
+      driver: { include: { driverProfile: true } },
+    },
+  });
+
+  res.json({
+    rides: rides.map((ride) => ({
+      ...serializeRide(ride),
+      otherParty:
+        role === 'DRIVER'
+          ? { name: ride.rider.name }
+          : ride.driver
+            ? {
+                name: ride.driver.name,
+                vehiclePlate: ride.driver.driverProfile?.vehiclePlate ?? null,
+                vehicleModel: ride.driver.driverProfile?.vehicleModel ?? null,
+              }
+            : null,
+    })),
+  });
+});
+
 ridesRouter.get('/:id', requireAuth, async (req, res) => {
   const ride = await prisma.ride.findUnique({ where: { id: req.params.id } });
   if (!ride || (ride.riderId !== req.auth!.userId && ride.driverId !== req.auth!.userId)) {
@@ -171,6 +208,7 @@ ridesRouter.post('/:id/arriving', requireAuth, requireRole('DRIVER'), async (req
 
   const ride = await prisma.ride.findUniqueOrThrow({ where: { id: req.params.id } });
   emitToRider(ride.riderId, 'ride:status', { rideId: ride.id, status: 'DRIVER_ARRIVING' });
+  sendPushToUser(ride.riderId, { title: 'Şoförün yolda!', body: 'Şoförün sana doğru geliyor.' }).catch(() => {});
   res.json({ ride: serializeRide(ride) });
 });
 
@@ -210,8 +248,10 @@ ridesRouter.post('/:id/cancel', requireAuth, async (req, res) => {
   // if the rider cancels.
   if (role === 'DRIVER') {
     emitToRider(ride.riderId, 'ride:status', { rideId: ride.id, status: 'CANCELLED', cancelledReason });
+    sendPushToUser(ride.riderId, { title: 'Yolculuk iptal edildi', body: cancelledReason }).catch(() => {});
   } else if (ride.driverId) {
     emitToDriver(ride.driverId, 'ride:status', { rideId: ride.id, status: 'CANCELLED', cancelledReason });
+    sendPushToUser(ride.driverId, { title: 'Yolculuk iptal edildi', body: cancelledReason }).catch(() => {});
   }
 
   res.status(204).end();

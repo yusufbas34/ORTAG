@@ -53,3 +53,15 @@ export interface IncomingReservationOffer {
   priceTry: number;
   paymentMethod: 'CASH' | 'IBAN_TRANSFER';
 }
+
+export interface RideHistoryItem {
+  id: string;
+  pickup: LocationPoint;
+  dropoff: LocationPoint;
+  distanceKm: number;
+  priceTry: number;
+  status: string;
+  cancelledReason?: string | null;
+  createdAt: string;
+  otherParty: { name: string } | null;
+}

@@ -11,6 +11,9 @@ import { rideOffersRouter } from './modules/rideOffers/routes.js';
 import { reservationsRouter } from './modules/reservations/routes.js';
 import { reservationOffersRouter } from './modules/reservationOffers/routes.js';
 import { adminRouter } from './modules/admin/routes.js';
+import { favoritesRouter } from './modules/favorites/routes.js';
+import { savedAddressesRouter } from './modules/savedAddresses/routes.js';
+import { pushRouter } from './modules/push/routes.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // backend compiles to backend/dist, so the frontend build sits two levels up.
@@ -39,6 +42,9 @@ export function createApp() {
   app.use('/api/reservations', reservationsRouter);
   app.use('/api/reservation-offers', reservationOffersRouter);
   app.use('/api/admin', adminRouter);
+  app.use('/api/favorites', favoritesRouter);
+  app.use('/api/saved-addresses', savedAddressesRouter);
+  app.use('/api/push', pushRouter);
 
   // In production this single service also serves the built frontend, so
   // one Railway deploy + one HTTPS domain is enough for a real PWA install

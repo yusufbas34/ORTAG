@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { apiClient } from '../../lib/apiClient';
 import { getSocket } from '../../lib/socketClient';
+import { MiniMap } from '../../shared/ui/MiniMap';
 import type { IncomingReservationOffer, ReservationOfferItem, ReservationSummary } from './types';
 import styles from './DriverReservations.module.css';
 
@@ -88,6 +89,7 @@ export function DriverReservations() {
           {pendingOffers.map(({ offerId, reservation }) => (
             <div key={offerId} className={styles.card}>
               <div className={styles.dateTime}>{formatDateTime(reservation.scheduledFor)}</div>
+              <MiniMap pickup={reservation.pickup} dropoff={reservation.dropoff} />
               <div className={styles.route}>
                 {reservation.pickup.address} → {reservation.dropoff.address}
               </div>
@@ -115,6 +117,7 @@ export function DriverReservations() {
             <div key={r.id} className={styles.card}>
               <span className={styles.badge}>Onaylandı</span>
               <div className={styles.dateTime}>{formatDateTime(r.scheduledFor)}</div>
+              <MiniMap pickup={r.pickup} dropoff={r.dropoff} interactive height={160} />
               <div className={styles.route}>
                 {r.pickup.address} → {r.dropoff.address}
               </div>

@@ -7,3 +7,9 @@ export function haversineKm(lat1: number, lng1: number, lat2: number, lng2: numb
     Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
+
+const AVG_CITY_SPEED_KMH = 25;
+
+export function estimateEtaMin(distanceKm: number): number {
+  return Math.max(1, Math.round((distanceKm / AVG_CITY_SPEED_KMH) * 60));
+}

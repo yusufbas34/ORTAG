@@ -49,3 +49,5 @@ iOS Safari'de "Ana Ekrana Ekle" ile kurulabilmesi için sitenin **HTTPS** üzeri
 ## Ortam değişkenleri (backend/.env)
 
 `OSRM_BASE_URL` ve `NOMINATIM_BASE_URL` varsayılan olarak ücretsiz genel servislere (router.project-osrm.org, nominatim.openstreetmap.org) işaret eder. Yoğun kullanımda kendi OSRM/Nominatim sunucunuzu self-host edip bu adresleri değiştirebilirsiniz.
+
+`VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` push bildirimleri içindir (`npx web-push generate-vapid-keys` ile üretilir). Boş bırakılırsa bildirimler sadece backend konsoluna loglanır, uygulama normal çalışmaya devam eder.

@@ -217,7 +217,10 @@ export function PlanRide() {
                   onChange={() => toggleDriver(d.userId)}
                 />
                 <div className={styles.info}>
-                  <strong>{d.name}</strong>
+                  <strong>
+                    {d.name}
+                    {d.isFavorite && <i className="fa-solid fa-star" style={{ color: '#F59E0B', marginLeft: 6, fontSize: '0.75rem' }} />}
+                  </strong>
                   <span>
                     {d.vehicleModel} • {d.vehiclePlate}
                     {d.distanceKm !== null ? ` • ${d.distanceKm} km` : ''}

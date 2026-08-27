@@ -20,6 +20,7 @@ export function ChooseDriver() {
   const [drivers, setDrivers] = useState<DriverSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [selecting, setSelecting] = useState(false);
+  const [togglingFavoriteId, setTogglingFavoriteId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!state) {
@@ -37,6 +38,23 @@ export function ChooseDriver() {
   }, []);
 
   if (!state) return null;
+
+  async function handleToggleFavorite(driver: DriverSummary) {
+    setTogglingFavoriteId(driver.userId);
+    const nextIsFavorite = !driver.isFavorite;
+    setDrivers((prev) => prev.map((d) => (d.userId === driver.userId ? { ...d, isFavorite: nextIsFavorite } : d)));
+    try {
+      if (nextIsFavorite) {
+        await apiClient.post('/favorites', { driverId: driver.userId });
+      } else {
+        await apiClient.del(`/favorites/${driver.userId}`);
+      }
+    } catch {
+      setDrivers((prev) => prev.map((d) => (d.userId === driver.userId ? { ...d, isFavorite: driver.isFavorite } : d)));
+    } finally {
+      setTogglingFavoriteId(null);
+    }
+  }
 
   async function handleSelect(driver: DriverSummary) {
     if (!state) return;
@@ -80,7 +98,10 @@ export function ChooseDriver() {
             vehicleModel={driver.vehicleModel}
             distanceKm={driver.distanceKm}
             etaMin={driver.etaMin}
+            isFavorite={driver.isFavorite}
+            favoriteBusy={togglingFavoriteId === driver.userId}
             onClick={selecting ? undefined : () => handleSelect(driver)}
+            onToggleFavorite={() => handleToggleFavorite(driver)}
           />
         ))}
       </div>

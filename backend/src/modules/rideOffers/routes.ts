@@ -4,6 +4,7 @@ import { requireAuth } from '../../middleware/auth.js';
 import { requireRole } from '../../middleware/requireRole.js';
 import { emitToDriver, emitToRider } from '../../realtime/socket.js';
 import { serializeRide, serializeDriverInfo } from '../../lib/serializeRide.js';
+import { sendPushToUser } from '../../lib/push.js';
 
 export const rideOffersRouter = Router();
 
@@ -63,6 +64,10 @@ rideOffersRouter.post('/:id/accept', requireAuth, requireRole('DRIVER'), async (
     driverId: ride.driverId,
     driver: driverProfile ? serializeDriverInfo(driverProfile) : null,
   });
+  sendPushToUser(ride.riderId, {
+    title: 'Şoförün bulundu!',
+    body: driverProfile ? `${driverProfile.user.name} yolculuğunu kabul etti.` : 'Şoförün yolculuğunu kabul etti.',
+  }).catch(() => {});
 
   res.json({ ride: serializeRide(ride) });
 });
