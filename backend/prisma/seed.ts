@@ -23,7 +23,7 @@ async function upsertUser(params: {
 
 async function main() {
   const admin = await upsertUser({
-    email: 'admin@tag.app',
+    email: 'admin@yol.app',
     password: 'admin1234',
     name: 'YOL Admin',
     role: 'ADMIN',
@@ -31,7 +31,7 @@ async function main() {
   console.log('admin:', admin.email);
 
   const rider = await upsertUser({
-    email: 'rider@tag.app',
+    email: 'rider@yol.app',
     password: 'rider1234',
     name: 'Ayşe Yolcu',
     role: 'RIDER',
@@ -44,7 +44,7 @@ async function main() {
   console.log('rider:', rider.email);
 
   const driverStandard = await upsertUser({
-    email: 'driver1@tag.app',
+    email: 'driver1@yol.app',
     password: 'driver1234',
     name: 'Mehmet Şoför',
     role: 'DRIVER',
@@ -67,7 +67,7 @@ async function main() {
   console.log('driver:', driverStandard.email);
 
   const driverXl = await upsertUser({
-    email: 'driver2@tag.app',
+    email: 'driver2@yol.app',
     password: 'driver1234',
     name: 'Ali XL Şoför',
     role: 'DRIVER',

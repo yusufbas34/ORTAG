@@ -23,10 +23,10 @@ Seed sonrası hazır hesaplar:
 
 | Rol    | Email             | Şifre       |
 | ------ | ----------------- | ----------- |
-| Admin  | admin@tag.app     | admin1234   |
-| Yolcu  | rider@tag.app     | rider1234   |
-| Şoför  | driver1@tag.app   | driver1234  |
-| Şoför  | driver2@tag.app   | driver1234  |
+| Admin  | admin@yol.app     | admin1234   |
+| Yolcu  | rider@yol.app     | rider1234   |
+| Şoför  | driver1@yol.app   | driver1234  |
+| Şoför  | driver2@yol.app   | driver1234  |
 
 ## Geliştirme
 
