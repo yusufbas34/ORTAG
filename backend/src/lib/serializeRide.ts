@@ -35,6 +35,7 @@ export function serializeRide(ride: {
   dispatchMode: DispatchMode;
   status: string;
   paymentMethod: PaymentMethod;
+  cancelledReason?: string | null;
   createdAt: Date;
 }) {
   return {
@@ -50,6 +51,7 @@ export function serializeRide(ride: {
     dispatchMode: ride.dispatchMode,
     status: ride.status,
     paymentMethod: ride.paymentMethod,
+    cancelledReason: ride.cancelledReason ?? null,
     createdAt: ride.createdAt,
   };
 }

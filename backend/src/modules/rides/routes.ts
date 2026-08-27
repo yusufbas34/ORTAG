@@ -187,11 +187,17 @@ ridesRouter.post('/:id/cancel', requireAuth, async (req, res) => {
     return;
   }
 
+  const { reason } = req.body ?? {};
   const cancelledBy = role === 'DRIVER' ? 'Şoför' : 'Yolcu';
+  const cancelledReason =
+    typeof reason === 'string' && reason.trim().length > 0
+      ? reason.trim().slice(0, 300)
+      : `${cancelledBy} bir sebep belirtmeden iptal etti`;
+
   await prisma.$transaction([
     prisma.ride.update({
       where: { id: ride.id },
-      data: { status: 'CANCELLED', cancelledReason: `${cancelledBy} tarafından iptal edildi` },
+      data: { status: 'CANCELLED', cancelledReason },
     }),
     prisma.rideOffer.updateMany({
       where: { rideId: ride.id, status: 'PENDING' },
@@ -203,9 +209,9 @@ ridesRouter.post('/:id/cancel', requireAuth, async (req, res) => {
   // if the driver cancels, and the driver needs to clear their active ride
   // if the rider cancels.
   if (role === 'DRIVER') {
-    emitToRider(ride.riderId, 'ride:status', { rideId: ride.id, status: 'CANCELLED' });
+    emitToRider(ride.riderId, 'ride:status', { rideId: ride.id, status: 'CANCELLED', cancelledReason });
   } else if (ride.driverId) {
-    emitToDriver(ride.driverId, 'ride:status', { rideId: ride.id, status: 'CANCELLED' });
+    emitToDriver(ride.driverId, 'ride:status', { rideId: ride.id, status: 'CANCELLED', cancelledReason });
   }
 
   res.status(204).end();
