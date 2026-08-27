@@ -1,3 +1,5 @@
+import { Capacitor } from '@capacitor/core';
+import { PushNotifications } from '@capacitor/push-notifications';
 import { apiClient } from './apiClient';
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
@@ -13,10 +15,32 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
 
 export type PushEnableResult = 'subscribed' | 'unsupported' | 'denied' | 'unavailable';
 
+// Inside the Capacitor-wrapped native app, real FCM/APNs push replaces Web
+// Push entirely — it keeps working even when the app is force-quit, which
+// browser-based Web Push cannot guarantee (especially on iOS).
+async function enableNativePush(): Promise<PushEnableResult> {
+  let permStatus = await PushNotifications.checkPermissions();
+  if (permStatus.receive === 'prompt') {
+    permStatus = await PushNotifications.requestPermissions();
+  }
+  if (permStatus.receive !== 'granted') return 'denied';
+
+  return new Promise((resolve) => {
+    PushNotifications.addListener('registration', (token) => {
+      apiClient
+        .post('/push/register-native', { platform: Capacitor.getPlatform(), token: token.value })
+        .then(() => resolve('subscribed'))
+        .catch(() => resolve('unavailable'));
+    });
+    PushNotifications.addListener('registrationError', () => resolve('unavailable'));
+    PushNotifications.register();
+  });
+}
+
 // Subscribes the current browser to Web Push and registers it with the
 // backend. Safe to call repeatedly — an existing subscription is reused
 // rather than duplicated.
-export async function enablePushNotifications(): Promise<PushEnableResult> {
+async function enableWebPush(): Promise<PushEnableResult> {
   if (!('serviceWorker' in navigator) || !('PushManager' in window)) return 'unsupported';
 
   const permission = await Notification.requestPermission();
@@ -39,7 +63,15 @@ export async function enablePushNotifications(): Promise<PushEnableResult> {
   return 'subscribed';
 }
 
+export function enablePushNotifications(): Promise<PushEnableResult> {
+  return Capacitor.isNativePlatform() ? enableNativePush() : enableWebPush();
+}
+
 export async function isPushSubscribed(): Promise<boolean> {
+  if (Capacitor.isNativePlatform()) {
+    const status = await PushNotifications.checkPermissions();
+    return status.receive === 'granted';
+  }
   if (!('serviceWorker' in navigator) || !('PushManager' in window)) return false;
   const registration = await navigator.serviceWorker.getRegistration();
   if (!registration) return false;

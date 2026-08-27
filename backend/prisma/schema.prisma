@@ -83,6 +83,7 @@ model User {
   favoritedBy       Favorite[]         @relation("FavoritesReceived")
   savedAddresses    SavedAddress[]
   pushSubscriptions PushSubscription[]
+  nativePushTokens  NativePushToken[]
 }
 
 model Favorite {
@@ -114,6 +115,18 @@ model PushSubscription {
   endpoint  String   @unique
   p256dh    String
   auth      String
+  createdAt DateTime @default(now())
+}
+
+// FCM/APNs device token for the Capacitor-wrapped native app — separate from
+// PushSubscription (browser Web Push) since the two use entirely different
+// delivery mechanisms and payload shapes.
+model NativePushToken {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  platform  String
+  token     String   @unique
   createdAt DateTime @default(now())
 }
 

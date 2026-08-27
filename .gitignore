@@ -8,6 +8,10 @@ backend/dev.db
 backend/dev.db-journal
 backend/.env
 
+# native app credentials (per-developer, from Firebase console)
+frontend/android/app/google-services.json
+frontend/ios/App/App/GoogleService-Info.plist
+
 # editor
 .vscode/
 .idea/
