@@ -212,6 +212,37 @@ ridesRouter.post('/:id/arriving', requireAuth, requireRole('DRIVER'), async (req
   res.json({ ride: serializeRide(ride) });
 });
 
+ridesRouter.post('/:id/start', requireAuth, requireRole('DRIVER'), async (req, res) => {
+  const claim = await prisma.ride.updateMany({
+    where: { id: req.params.id, driverId: req.auth!.userId, status: 'DRIVER_ARRIVING' },
+    data: { status: 'IN_PROGRESS', startedAt: new Date() },
+  });
+  if (claim.count === 0) {
+    res.status(409).json({ error: 'Bu yolculuk şu an bu durumda güncellenemez.' });
+    return;
+  }
+
+  const ride = await prisma.ride.findUniqueOrThrow({ where: { id: req.params.id } });
+  emitToRider(ride.riderId, 'ride:status', { rideId: ride.id, status: 'IN_PROGRESS' });
+  res.json({ ride: serializeRide(ride) });
+});
+
+ridesRouter.post('/:id/complete', requireAuth, requireRole('DRIVER'), async (req, res) => {
+  const claim = await prisma.ride.updateMany({
+    where: { id: req.params.id, driverId: req.auth!.userId, status: 'IN_PROGRESS' },
+    data: { status: 'COMPLETED', completedAt: new Date() },
+  });
+  if (claim.count === 0) {
+    res.status(409).json({ error: 'Bu yolculuk şu an bu durumda güncellenemez.' });
+    return;
+  }
+
+  const ride = await prisma.ride.findUniqueOrThrow({ where: { id: req.params.id } });
+  emitToRider(ride.riderId, 'ride:status', { rideId: ride.id, status: 'COMPLETED' });
+  sendPushToUser(ride.riderId, { title: 'Yolculuk tamamlandı', body: 'İyi günler dileriz!' }).catch(() => {});
+  res.json({ ride: serializeRide(ride) });
+});
+
 ridesRouter.post('/:id/cancel', requireAuth, async (req, res) => {
   const { userId, role } = req.auth!;
   const ride = await prisma.ride.findUnique({ where: { id: req.params.id } });

@@ -58,10 +58,17 @@ export function ActiveRideCard({
         </div>
       )}
 
-      {(ride.status === 'DRIVER_ARRIVING' || ride.status === 'IN_PROGRESS') && (
+      {ride.status === 'DRIVER_ARRIVING' && (
         <div className={styles.statusRow}>
           <i className="fa-solid fa-location-arrow" style={{ color: 'var(--primary)' }} />
           <strong>Şoför yolda!</strong>
+        </div>
+      )}
+
+      {ride.status === 'IN_PROGRESS' && (
+        <div className={styles.statusRow}>
+          <i className="fa-solid fa-road" style={{ color: 'var(--primary)' }} />
+          <strong>Yolculuğunuz devam ediyor</strong>
         </div>
       )}
 

@@ -30,6 +30,8 @@ export function DriverHome() {
   const [activeRide, setActiveRide] = useState<AcceptedRide | null>(null);
   const [cancelling, setCancelling] = useState(false);
   const [startingArrival, setStartingArrival] = useState(false);
+  const [startingTrip, setStartingTrip] = useState(false);
+  const [completingTrip, setCompletingTrip] = useState(false);
   const [showCancelForm, setShowCancelForm] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
   const [locationWarning, setLocationWarning] = useState<string | null>(null);
@@ -180,6 +182,28 @@ export function DriverHome() {
     }
   }
 
+  async function handleStartTrip() {
+    if (!activeRide) return;
+    setStartingTrip(true);
+    try {
+      const { ride } = await apiClient.post<{ ride: AcceptedRide }>(`/rides/${activeRide.id}/start`);
+      setActiveRide(ride);
+    } finally {
+      setStartingTrip(false);
+    }
+  }
+
+  async function handleCompleteTrip() {
+    if (!activeRide) return;
+    setCompletingTrip(true);
+    try {
+      const { ride } = await apiClient.post<{ ride: AcceptedRide }>(`/rides/${activeRide.id}/complete`);
+      setActiveRide(ride);
+    } finally {
+      setCompletingTrip(false);
+    }
+  }
+
   async function handleCancelRide() {
     if (!activeRide) return;
     setCancelling(true);
@@ -252,9 +276,13 @@ export function DriverHome() {
             <span className={styles.badge}>
               {activeRide.status === 'CANCELLED'
                 ? 'İptal Edildi'
-                : activeRide.status === 'DRIVER_ARRIVING'
-                  ? 'Yola Çıktın'
-                  : 'Yolculuk Kabul Edildi'}
+                : activeRide.status === 'COMPLETED'
+                  ? 'Tamamlandı'
+                  : activeRide.status === 'IN_PROGRESS'
+                    ? 'Yolculuk Devam Ediyor'
+                    : activeRide.status === 'DRIVER_ARRIVING'
+                      ? 'Yola Çıktın'
+                      : 'Yolculuk Kabul Edildi'}
             </span>
             {activeRide.status === 'CANCELLED' && activeRide.cancelledReason && (
               <p className={styles.cancelledReasonText}>Sebep: {activeRide.cancelledReason}</p>
@@ -274,7 +302,7 @@ export function DriverHome() {
               <MiniMap pickup={activeRide.pickup} dropoff={activeRide.dropoff} driverLocation={ownLocation} height={180} interactive />
             )}
 
-            {activeRide.status === 'CANCELLED' ? (
+            {activeRide.status === 'CANCELLED' || activeRide.status === 'COMPLETED' ? (
               <button className={styles.dismissRideBtn} onClick={handleDismissRide}>
                 Kapat
               </button>
@@ -303,9 +331,21 @@ export function DriverHome() {
                     {startingArrival ? 'Güncelleniyor...' : 'Yola Çıktım'}
                   </button>
                 )}
-                <button className={styles.cancelRideBtn} onClick={() => setShowCancelForm(true)}>
-                  İptal Et
-                </button>
+                {activeRide.status === 'DRIVER_ARRIVING' && (
+                  <button className={styles.arrivingBtn} onClick={handleStartTrip} disabled={startingTrip}>
+                    {startingTrip ? 'Güncelleniyor...' : 'Yolcu Bindi'}
+                  </button>
+                )}
+                {activeRide.status === 'IN_PROGRESS' && (
+                  <button className={styles.arrivingBtn} onClick={handleCompleteTrip} disabled={completingTrip}>
+                    {completingTrip ? 'Tamamlanıyor...' : 'Yolculuğu Tamamla'}
+                  </button>
+                )}
+                {activeRide.status !== 'IN_PROGRESS' && (
+                  <button className={styles.cancelRideBtn} onClick={() => setShowCancelForm(true)}>
+                    İptal Et
+                  </button>
+                )}
               </div>
             )}
           </div>

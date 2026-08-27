@@ -126,6 +126,11 @@ authRouter.post('/login', async (req, res) => {
     return;
   }
 
+  if (user.isBanned) {
+    res.status(403).json({ error: user.bannedReason ? `Hesabınız engellendi: ${user.bannedReason}` : 'Hesabınız yönetici tarafından engellendi.' });
+    return;
+  }
+
   const token = signAuthToken({ userId: user.id, role: user.role });
   setAuthCookie(res, token);
   res.json({ user: publicUser(user) });

@@ -60,6 +60,9 @@ model User {
   role          UserRole
   name          String
   emailVerified Boolean  @default(false)
+  isBanned      Boolean  @default(false)
+  bannedReason  String?
+  bannedAt      DateTime?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
