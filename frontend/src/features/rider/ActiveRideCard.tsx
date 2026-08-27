@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { MiniMap } from '../../shared/ui/MiniMap';
 import type { DriverContactInfo, Ride } from './types';
 import styles from './ActiveRideCard.module.css';
@@ -7,7 +8,7 @@ interface ActiveRideCardProps {
   driver: DriverContactInfo | null;
   driverLocation: { lat: number; lng: number } | null;
   cancelling: boolean;
-  onCancel: () => void;
+  onCancel: (reason: string) => void;
   onDismiss: () => void;
 }
 
@@ -15,9 +16,18 @@ const WAITING_STATUSES = new Set(['REQUESTED', 'DISPATCHING']);
 const ON_THE_WAY_STATUSES = new Set(['ACCEPTED', 'DRIVER_ARRIVING', 'IN_PROGRESS']);
 
 export function ActiveRideCard({ ride, driver, driverLocation, cancelling, onCancel, onDismiss }: ActiveRideCardProps) {
+  const [showCancelForm, setShowCancelForm] = useState(false);
+  const [reason, setReason] = useState('');
+
   const isWaiting = WAITING_STATUSES.has(ride.status);
   const isOnTheWay = ON_THE_WAY_STATUSES.has(ride.status);
   const isClosed = ride.status === 'NO_DRIVER_FOUND' || ride.status === 'CANCELLED' || ride.status === 'COMPLETED';
+
+  function submitCancel() {
+    onCancel(reason);
+    setShowCancelForm(false);
+    setReason('');
+  }
 
   return (
     <div className={styles.card}>
@@ -56,6 +66,10 @@ export function ActiveRideCard({ ride, driver, driverLocation, cancelling, onCan
         </div>
       )}
 
+      {ride.status === 'CANCELLED' && ride.cancelledReason && (
+        <p className={styles.cancelReasonText}>Sebep: {ride.cancelledReason}</p>
+      )}
+
       {ride.status === 'COMPLETED' && (
         <div className={styles.statusRow}>
           <i className="fa-solid fa-flag-checkered" style={{ color: 'var(--primary)' }} />
@@ -72,7 +86,7 @@ export function ActiveRideCard({ ride, driver, driverLocation, cancelling, onCan
       )}
 
       {isOnTheWay && (
-        <MiniMap pickup={ride.pickup} dropoff={ride.dropoff} driverLocation={driverLocation} height={160} />
+        <MiniMap pickup={ride.pickup} dropoff={ride.dropoff} driverLocation={driverLocation} height={180} interactive />
       )}
 
       <div className={styles.route}>
@@ -103,9 +117,27 @@ export function ActiveRideCard({ ride, driver, driverLocation, cancelling, onCan
         <button className={styles.dismissBtn} onClick={onDismiss}>
           Kapat
         </button>
+      ) : showCancelForm ? (
+        <div className={styles.cancelForm}>
+          <textarea
+            className={styles.cancelTextarea}
+            placeholder="İptal sebebini yaz (opsiyonel)"
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            rows={2}
+          />
+          <div className={styles.cancelFormActions}>
+            <button className={styles.dismissBtn} onClick={() => setShowCancelForm(false)} disabled={cancelling}>
+              Vazgeç
+            </button>
+            <button className={styles.cancelBtn} onClick={submitCancel} disabled={cancelling}>
+              {cancelling ? 'İptal ediliyor...' : 'İptali Onayla'}
+            </button>
+          </div>
+        </div>
       ) : (
-        <button className={styles.cancelBtn} onClick={onCancel} disabled={cancelling}>
-          {cancelling ? 'İptal ediliyor...' : 'Yolculuğu İptal Et'}
+        <button className={styles.cancelBtn} onClick={() => setShowCancelForm(true)}>
+          Yolculuğu İptal Et
         </button>
       )}
     </div>

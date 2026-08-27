@@ -163,10 +163,18 @@ export function RiderHome() {
       status: RideStatus;
       driverId?: string | null;
       driver?: DriverContactInfo | null;
+      cancelledReason?: string | null;
     }) {
       if (payload.rideId !== activeRideIdRef.current) return;
       setActiveRide((prev) =>
-        prev ? { ...prev, status: payload.status, driverId: payload.driverId ?? prev.driverId } : prev,
+        prev
+          ? {
+              ...prev,
+              status: payload.status,
+              driverId: payload.driverId ?? prev.driverId,
+              cancelledReason: payload.cancelledReason ?? prev.cancelledReason,
+            }
+          : prev,
       );
       if (payload.driver) {
         setAcceptedDriver(payload.driver);
@@ -215,12 +223,12 @@ export function RiderHome() {
     });
   }
 
-  async function handleCancel() {
+  async function handleCancel(reason: string) {
     if (!activeRide) return;
     setCancelling(true);
     try {
-      await apiClient.post(`/rides/${activeRide.id}/cancel`);
-      setActiveRide((prev) => (prev ? { ...prev, status: 'CANCELLED' } : prev));
+      await apiClient.post(`/rides/${activeRide.id}/cancel`, { reason });
+      setActiveRide((prev) => (prev ? { ...prev, status: 'CANCELLED', cancelledReason: reason || null } : prev));
     } finally {
       setCancelling(false);
     }

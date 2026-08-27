@@ -24,6 +24,7 @@ export interface AcceptedRide {
   priceTry: number;
   paymentMethod: 'CASH' | 'IBAN_TRANSFER';
   status: string;
+  cancelledReason?: string | null;
 }
 
 export interface ReservationSummary {

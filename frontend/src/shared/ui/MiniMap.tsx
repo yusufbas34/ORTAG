@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Polyline, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -9,6 +9,7 @@ interface MiniMapProps {
   dropoff: { lat: number; lng: number };
   driverLocation?: { lat: number; lng: number } | null;
   height?: number;
+  interactive?: boolean;
 }
 
 function dotIcon(color: string) {
@@ -29,38 +30,46 @@ const carIcon = L.divIcon({
   iconAnchor: [14, 14],
 });
 
-function FitBounds({ points }: { points: [number, number][] }) {
+function FitBoundsOnce({ points }: { points: [number, number][] }) {
   const map = useMap();
+  const didFit = useRef(false);
 
   useEffect(() => {
+    if (didFit.current) return;
+    didFit.current = true;
     map.fitBounds(L.latLngBounds(points), { padding: [24, 24] });
-  }, [map, points]);
+    // Only frames the map once on mount — once the rider/driver starts
+    // panning or zooming manually, live position updates shouldn't yank the
+    // view back and fight their gesture.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [map]);
 
   return null;
 }
 
-// A small route preview for list items (reservation cards, active-ride
-// tracking) — real routing geometry isn't stored per-item, so this draws a
+// A route preview for list items (reservation cards) and active-ride
+// tracking — real routing geometry isn't stored per-item, so this draws a
 // straight line between pickup/dropoff purely as a visual reference. When
 // `driverLocation` is supplied it also plots a live car marker that moves as
-// new positions arrive, and the map re-fits to keep everything in frame.
-export function MiniMap({ pickup, dropoff, driverLocation, height = 120 }: MiniMapProps) {
+// new positions arrive. Pass `interactive` to allow pinch/scroll zoom and
+// dragging (used for the live trip-tracking maps, not the small list previews).
+export function MiniMap({ pickup, dropoff, driverLocation, height = 120, interactive = false }: MiniMapProps) {
   const points: [number, number][] = [
     [pickup.lat, pickup.lng],
     [dropoff.lat, dropoff.lng],
   ];
-  const boundsPoints = driverLocation ? [...points, [driverLocation.lat, driverLocation.lng] as [number, number]] : points;
+  const initialBoundsPoints = driverLocation ? [...points, [driverLocation.lat, driverLocation.lng] as [number, number]] : points;
 
   return (
-    <div className={styles.wrapper} style={{ height }}>
+    <div className={[styles.wrapper, interactive ? styles.interactive : ''].join(' ')} style={{ height }}>
       <MapContainer
         center={points[0]}
         zoom={12}
-        zoomControl={false}
-        dragging={false}
-        scrollWheelZoom={false}
-        doubleClickZoom={false}
-        touchZoom={false}
+        zoomControl={interactive}
+        dragging={interactive}
+        scrollWheelZoom={interactive}
+        doubleClickZoom={interactive}
+        touchZoom={interactive}
         attributionControl={false}
         className={styles.map}
       >
@@ -69,7 +78,7 @@ export function MiniMap({ pickup, dropoff, driverLocation, height = 120 }: MiniM
         <Marker position={points[1]} icon={dropoffIcon} />
         {driverLocation && <Marker position={[driverLocation.lat, driverLocation.lng]} icon={carIcon} />}
         <Polyline positions={points} pathOptions={{ color: '#00D26A', weight: 3, dashArray: '5 7' }} />
-        <FitBounds points={boundsPoints} />
+        <FitBoundsOnce points={initialBoundsPoints} />
       </MapContainer>
     </div>
   );

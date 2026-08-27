@@ -43,6 +43,7 @@ export interface Ride {
   dispatchMode: 'BROADCAST' | 'DIRECT';
   status: RideStatus;
   paymentMethod: PaymentMethod;
+  cancelledReason?: string | null;
   createdAt: string;
 }
 

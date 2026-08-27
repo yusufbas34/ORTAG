@@ -6,8 +6,11 @@ import { getCurrentPosition } from '../../lib/geolocation';
 import { getSocket } from '../../lib/socketClient';
 import { IncomingOfferOverlay } from './IncomingOfferOverlay';
 import { DriverReservations } from './DriverReservations';
+import { MiniMap } from '../../shared/ui/MiniMap';
 import type { AcceptedRide, IncomingOffer } from './types';
 import styles from './DriverHome.module.css';
+
+const TRACKING_STATUSES = new Set(['ACCEPTED', 'DRIVER_ARRIVING', 'IN_PROGRESS']);
 
 interface DriverProfile {
   isAvailable: boolean;
@@ -26,7 +29,10 @@ export function DriverHome() {
   const [activeRide, setActiveRide] = useState<AcceptedRide | null>(null);
   const [cancelling, setCancelling] = useState(false);
   const [startingArrival, setStartingArrival] = useState(false);
+  const [showCancelForm, setShowCancelForm] = useState(false);
+  const [cancelReason, setCancelReason] = useState('');
   const [locationWarning, setLocationWarning] = useState<string | null>(null);
+  const [ownLocation, setOwnLocation] = useState<{ lat: number; lng: number } | null>(null);
   const locationWatchIdRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -54,11 +60,12 @@ export function DriverHome() {
     function handleOfferClosed(payload: { offerId: string; reason: string }) {
       setIncomingOffer((current) => (current?.offerId === payload.offerId ? null : current));
     }
-    function handleRideStatus(payload: { rideId: string; status: string }) {
+    function handleRideStatus(payload: { rideId: string; status: string; cancelledReason?: string | null }) {
       setActiveRide((current) => {
         if (!current || current.id !== payload.rideId) return current;
-        // The rider cancelled from their side — clear this driver's active ride too.
-        return payload.status === 'CANCELLED' ? null : { ...current, status: payload.status };
+        // The rider cancelled from their side — keep the card visible with the
+        // reason so the driver knows why, rather than silently vanishing.
+        return { ...current, status: payload.status, cancelledReason: payload.cancelledReason ?? current.cancelledReason };
       });
     }
 
@@ -72,15 +79,18 @@ export function DriverHome() {
     };
   }, []);
 
-  // Broadcast live location while actually en route to/with the rider — not
-  // before, so the tracking map only lights up once the trip is truly moving.
+  // Track (and broadcast) live location for the whole lifetime of an accepted
+  // ride — the driver's own map needs it right away, and the rider's tracking
+  // map picks up the same stream once the driver is en route.
   useEffect(() => {
-    const shouldTrack = activeRide?.status === 'DRIVER_ARRIVING' || activeRide?.status === 'IN_PROGRESS';
+    const shouldTrack = !!activeRide && TRACKING_STATUSES.has(activeRide.status);
 
     if (shouldTrack && locationWatchIdRef.current === null && navigator.geolocation) {
       locationWatchIdRef.current = navigator.geolocation.watchPosition(
         (pos) => {
-          getSocket()?.emit('driver:location', { lat: pos.coords.latitude, lng: pos.coords.longitude });
+          const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+          setOwnLocation(coords);
+          getSocket()?.emit('driver:location', coords);
         },
         () => {},
         { enableHighAccuracy: true, maximumAge: 5000 },
@@ -90,6 +100,7 @@ export function DriverHome() {
     if (!shouldTrack && locationWatchIdRef.current !== null) {
       navigator.geolocation.clearWatch(locationWatchIdRef.current);
       locationWatchIdRef.current = null;
+      setOwnLocation(null);
     }
 
     return () => {
@@ -171,11 +182,17 @@ export function DriverHome() {
     if (!activeRide) return;
     setCancelling(true);
     try {
-      await apiClient.post(`/rides/${activeRide.id}/cancel`);
-      setActiveRide(null);
+      await apiClient.post(`/rides/${activeRide.id}/cancel`, { reason: cancelReason });
+      setActiveRide((prev) => (prev ? { ...prev, status: 'CANCELLED', cancelledReason: cancelReason || null } : prev));
+      setShowCancelForm(false);
+      setCancelReason('');
     } finally {
       setCancelling(false);
     }
+  }
+
+  function handleDismissRide() {
+    setActiveRide(null);
   }
 
   return (
@@ -205,8 +222,15 @@ export function DriverHome() {
         {activeRide ? (
           <div className={styles.activeRideCard}>
             <span className={styles.badge}>
-              {activeRide.status === 'DRIVER_ARRIVING' ? 'Yola Çıktın' : 'Yolculuk Kabul Edildi'}
+              {activeRide.status === 'CANCELLED'
+                ? 'İptal Edildi'
+                : activeRide.status === 'DRIVER_ARRIVING'
+                  ? 'Yola Çıktın'
+                  : 'Yolculuk Kabul Edildi'}
             </span>
+            {activeRide.status === 'CANCELLED' && activeRide.cancelledReason && (
+              <p className={styles.cancelledReasonText}>Sebep: {activeRide.cancelledReason}</p>
+            )}
             <div>
               <strong>Kalkış:</strong> {activeRide.pickup.address}
             </div>
@@ -217,16 +241,45 @@ export function DriverHome() {
               {activeRide.distanceKm} km • ₺{activeRide.priceTry} •{' '}
               {activeRide.paymentMethod === 'CASH' ? 'Nakit' : 'IBAN Havale'}
             </div>
-            <div className={styles.activeRideActions}>
-              {activeRide.status === 'ACCEPTED' && (
-                <button className={styles.arrivingBtn} onClick={handleStartArriving} disabled={startingArrival}>
-                  {startingArrival ? 'Güncelleniyor...' : 'Yola Çıktım'}
-                </button>
-              )}
-              <button className={styles.cancelRideBtn} onClick={handleCancelRide} disabled={cancelling}>
-                {cancelling ? 'İptal ediliyor...' : 'İptal Et'}
+
+            {TRACKING_STATUSES.has(activeRide.status) && (
+              <MiniMap pickup={activeRide.pickup} dropoff={activeRide.dropoff} driverLocation={ownLocation} height={180} interactive />
+            )}
+
+            {activeRide.status === 'CANCELLED' ? (
+              <button className={styles.dismissRideBtn} onClick={handleDismissRide}>
+                Kapat
               </button>
-            </div>
+            ) : showCancelForm ? (
+              <div className={styles.cancelForm}>
+                <textarea
+                  className={styles.cancelTextarea}
+                  placeholder="İptal sebebini yaz (opsiyonel)"
+                  value={cancelReason}
+                  onChange={(e) => setCancelReason(e.target.value)}
+                  rows={2}
+                />
+                <div className={styles.activeRideActions}>
+                  <button className={styles.dismissRideBtn} onClick={() => setShowCancelForm(false)} disabled={cancelling}>
+                    Vazgeç
+                  </button>
+                  <button className={styles.cancelRideBtn} onClick={handleCancelRide} disabled={cancelling}>
+                    {cancelling ? 'İptal ediliyor...' : 'İptali Onayla'}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className={styles.activeRideActions}>
+                {activeRide.status === 'ACCEPTED' && (
+                  <button className={styles.arrivingBtn} onClick={handleStartArriving} disabled={startingArrival}>
+                    {startingArrival ? 'Güncelleniyor...' : 'Yola Çıktım'}
+                  </button>
+                )}
+                <button className={styles.cancelRideBtn} onClick={() => setShowCancelForm(true)}>
+                  İptal Et
+                </button>
+              </div>
+            )}
           </div>
         ) : profile?.isAvailable ? (
           <>
