@@ -2,6 +2,7 @@ import type { DispatchMode, VehicleType } from '@prisma/client';
 import { prisma } from './prismaClient.js';
 import { findNearbyDrivers } from './nearbyDrivers.js';
 import { emitToDriver } from '../realtime/socket.js';
+import { sendReservationOfferEmail } from './email.js';
 
 const BROADCAST_CANDIDATE_COUNT = 5;
 
@@ -38,6 +39,12 @@ export async function dispatchReservation(params: {
   );
 
   const reservation = await prisma.reservation.findUniqueOrThrow({ where: { id: reservationId } });
+  const driverUsers = await prisma.user.findMany({
+    where: { id: { in: targetDriverIds } },
+    select: { id: true, email: true },
+  });
+  const emailByDriverId = new Map(driverUsers.map((u) => [u.id, u.email]));
+
   for (const offer of offers) {
     emitToDriver(offer.driverId, 'reservation:offer', {
       offerId: offer.id,
@@ -49,6 +56,19 @@ export async function dispatchReservation(params: {
       priceTry: reservation.priceTry,
       paymentMethod: reservation.paymentMethod,
     });
+
+    // Best-effort — a driver who's offline right now still gets the reservation
+    // request in their inbox, since the socket event only reaches a live connection.
+    const driverEmail = emailByDriverId.get(offer.driverId);
+    if (driverEmail) {
+      sendReservationOfferEmail(driverEmail, {
+        pickupAddress: reservation.pickupAddress,
+        dropoffAddress: reservation.dropoffAddress,
+        scheduledFor: reservation.scheduledFor,
+        priceTry: reservation.priceTry,
+        distanceKm: reservation.distanceKm,
+      }).catch((err) => console.error('[reservationDispatch] email error', err));
+    }
   }
 
   return { dispatched: true };

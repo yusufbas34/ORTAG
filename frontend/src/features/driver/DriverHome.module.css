@@ -132,3 +132,13 @@
   font-weight: 700;
   cursor: pointer;
 }
+
+.locationWarning {
+  margin: 0 20px;
+  padding: 10px 14px;
+  background: #FEF3C7;
+  color: #92400E;
+  border-radius: var(--radius-sm);
+  font-size: 0.82rem;
+  font-weight: 600;
+}

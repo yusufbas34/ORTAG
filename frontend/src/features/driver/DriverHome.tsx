@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 import { apiClient } from '../../lib/apiClient';
+import { getCurrentPosition } from '../../lib/geolocation';
 import { getSocket } from '../../lib/socketClient';
 import { IncomingOfferOverlay } from './IncomingOfferOverlay';
 import { DriverReservations } from './DriverReservations';
@@ -23,6 +24,7 @@ export function DriverHome() {
   const [incomingOffer, setIncomingOffer] = useState<IncomingOffer | null>(null);
   const [responding, setResponding] = useState(false);
   const [activeRide, setActiveRide] = useState<AcceptedRide | null>(null);
+  const [locationWarning, setLocationWarning] = useState<string | null>(null);
 
   useEffect(() => {
     apiClient.get<{ profile: DriverProfile }>('/drivers/me').then(({ profile }) => setProfile(profile));
@@ -51,7 +53,26 @@ export function DriverHome() {
     if (!profile) return;
     const isAvailable = !profile.isAvailable;
     setProfile({ ...profile, isAvailable });
-    await apiClient.post<{ profile: DriverProfile }>('/drivers/me/availability', { isAvailable });
+    setLocationWarning(null);
+
+    if (!isAvailable) {
+      await apiClient.post<{ profile: DriverProfile }>('/drivers/me/availability', { isAvailable });
+      return;
+    }
+
+    // Going online — attach current location so riders can actually find this
+    // driver. Without it the driver stays invisible to nearby-driver search.
+    try {
+      const pos = await getCurrentPosition();
+      await apiClient.post<{ profile: DriverProfile }>('/drivers/me/availability', {
+        isAvailable,
+        lat: pos.coords.latitude,
+        lng: pos.coords.longitude,
+      });
+    } catch {
+      setLocationWarning('Konum paylaşılamadı — yakınındaki yolculuk taleplerini alamayabilirsin. Randevu talepleri yine de gelir.');
+      await apiClient.post<{ profile: DriverProfile }>('/drivers/me/availability', { isAvailable });
+    }
   }
 
   async function handleAccept() {
@@ -104,6 +125,8 @@ export function DriverHome() {
           </button>
         </div>
       </div>
+
+      {locationWarning && <p className={styles.locationWarning}>{locationWarning}</p>}
 
       <div className={styles.body}>
         {activeRide ? (

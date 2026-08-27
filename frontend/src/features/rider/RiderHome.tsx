@@ -16,7 +16,8 @@ import { useDebouncedValue } from '../../shared/hooks/useDebouncedValue';
 import { apiClient } from '../../lib/apiClient';
 import { getCurrentPosition } from '../../lib/geolocation';
 import { getSocket } from '../../lib/socketClient';
-import type { LocationPoint, PaymentMethod, QuoteResponse, Ride, RideStatus, VehicleType } from './types';
+import type { LocationPoint, PaymentMethod, QuoteResponse, Reservation, Ride, RideStatus, VehicleType } from './types';
+import styles from './RiderHome.module.css';
 
 type ActiveField = 'pickup' | 'dropoff' | null;
 
@@ -75,6 +76,7 @@ export function RiderHome() {
   const [activeRide, setActiveRide] = useState<Ride | null>(null);
   const [acceptedDriver, setAcceptedDriver] = useState<AcceptedDriverInfo | null>(null);
   const [dispatching, setDispatching] = useState(false);
+  const [upcomingReservation, setUpcomingReservation] = useState<Reservation | null>(null);
   const activeRideIdRef = useRef<string | null>(null);
 
   const activeInputValue = activeField === 'pickup' ? pickupInput : activeField === 'dropoff' ? dropoffInput : '';
@@ -103,6 +105,20 @@ export function RiderHome() {
       .catch(() => {
         // Geolocation denied/unavailable — rider types the pickup manually.
       });
+  }, []);
+
+  // Surface the nearest upcoming reservation right on the home screen —
+  // scheduling a ride is the primary flow, so it shouldn't be buried in a menu.
+  useEffect(() => {
+    apiClient
+      .get<{ reservations: Reservation[] }>('/reservations/mine')
+      .then(({ reservations }) => {
+        const upcoming = reservations
+          .filter((r) => (r.status === 'PENDING_DISPATCH' || r.status === 'CONFIRMED') && new Date(r.scheduledFor) > new Date())
+          .sort((a, b) => new Date(a.scheduledFor).getTime() - new Date(b.scheduledFor).getTime());
+        setUpcomingReservation(upcoming[0] ?? null);
+      })
+      .catch(() => {});
   }, []);
 
   // Address suggestions for whichever field currently has focus.
@@ -253,6 +269,42 @@ export function RiderHome() {
       <MapView pickup={pickup} dropoff={dropoff} routeCoordinates={routeCoordinates} />
 
       <BottomSheet>
+        <div className={styles.planHero} onClick={() => navigate('/rider/plan')} role="button" tabIndex={0}>
+          <div className={styles.planHeroIcon}>
+            <i className="fa-solid fa-calendar-plus" />
+          </div>
+          <div className={styles.planHeroBody}>
+            <strong>Araç Planla</strong>
+            <span>İleri bir tarih/saat için randevulu araç ayarla</span>
+          </div>
+          <i className="fa-solid fa-chevron-right" />
+        </div>
+
+        {upcomingReservation && (
+          <div className={styles.upcomingCard} onClick={() => navigate('/rider/planned')} role="button" tabIndex={0}>
+            <i className="fa-solid fa-calendar-check" />
+            <div className={styles.upcomingBody}>
+              <strong>
+                {upcomingReservation.status === 'CONFIRMED' ? 'Onaylı randevun var' : 'Randevu talebin bekleniyor'}
+              </strong>
+              <span>
+                {new Date(upcomingReservation.scheduledFor).toLocaleString('tr-TR', {
+                  day: '2-digit',
+                  month: 'long',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })}{' '}
+                • {upcomingReservation.dropoff.address}
+              </span>
+            </div>
+            <i className="fa-solid fa-chevron-right" />
+          </div>
+        )}
+
+        <div className={styles.extraDivider}>
+          <span>EKSTRA · HEMEN ARAÇ ÇAĞIR</span>
+        </div>
+
         <LocationCard rows={rows} />
 
         {activeField && (

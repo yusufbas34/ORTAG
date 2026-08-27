@@ -58,6 +58,17 @@ export interface DriverSummary {
   etaMin: number;
 }
 
+export interface ReservationDriverOption {
+  userId: string;
+  name: string;
+  vehiclePlate: string;
+  vehicleModel: string;
+  vehicleType: VehicleType;
+  isAvailable: boolean;
+  distanceKm: number | null;
+  etaMin: number | null;
+}
+
 export type ReservationStatus = 'PENDING_DISPATCH' | 'CONFIRMED' | 'CANCELLED' | 'EXPIRED' | 'COMPLETED';
 
 export interface Reservation {

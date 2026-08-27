@@ -9,7 +9,7 @@ import { TextField } from '../../shared/ui/TextField';
 import { SelectField } from '../../shared/ui/SelectField';
 import { PaymentMethodToggle } from '../../shared/ui/PaymentMethodToggle';
 import { Button } from '../../shared/ui/Button';
-import type { DriverSummary, LocationPoint, PaymentMethod, Reservation, VehicleType } from './types';
+import type { LocationPoint, PaymentMethod, Reservation, ReservationDriverOption, VehicleType } from './types';
 import styles from './PlanRide.module.css';
 
 type ActiveField = 'pickup' | 'dropoff' | null;
@@ -36,7 +36,7 @@ export function PlanRide() {
   const [vehicleType, setVehicleType] = useState<VehicleType>('STANDARD');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('CASH');
   const [targetMode, setTargetMode] = useState<TargetMode>('BROADCAST');
-  const [nearbyDrivers, setNearbyDrivers] = useState<DriverSummary[]>([]);
+  const [allDrivers, setAllDrivers] = useState<ReservationDriverOption[]>([]);
   const [selectedDriverIds, setSelectedDriverIds] = useState<string[]>([]);
 
   const [submitting, setSubmitting] = useState(false);
@@ -83,10 +83,11 @@ export function PlanRide() {
   }, [activeField, debouncedQuery]);
 
   useEffect(() => {
-    if (targetMode !== 'MANUAL' || !pickup) return;
+    if (targetMode !== 'MANUAL') return;
+    const locationQuery = pickup ? `&lat=${pickup.lat}&lng=${pickup.lng}` : '';
     apiClient
-      .get<{ drivers: DriverSummary[] }>(`/drivers/nearby?lat=${pickup.lat}&lng=${pickup.lng}&vehicleType=${vehicleType}`)
-      .then(({ drivers }) => setNearbyDrivers(drivers));
+      .get<{ drivers: ReservationDriverOption[] }>(`/drivers/all?vehicleType=${vehicleType}${locationQuery}`)
+      .then(({ drivers }) => setAllDrivers(drivers));
   }, [targetMode, pickup?.lat, pickup?.lng, vehicleType]);
 
   function selectSuggestion(field: 'pickup' | 'dropoff', suggestion: AddressSuggestion) {
@@ -204,8 +205,8 @@ export function PlanRide() {
 
         {targetMode === 'MANUAL' && (
           <div className={styles.driverList}>
-            {nearbyDrivers.length === 0 && <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Yakında müsait şoför bulunamadı.</p>}
-            {nearbyDrivers.map((d) => (
+            {allDrivers.length === 0 && <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Bu araç tipinde kayıtlı şoför bulunamadı.</p>}
+            {allDrivers.map((d) => (
               <label
                 key={d.userId}
                 className={[styles.driverCheck, selectedDriverIds.includes(d.userId) ? styles.checked : ''].join(' ')}
@@ -218,9 +219,13 @@ export function PlanRide() {
                 <div className={styles.info}>
                   <strong>{d.name}</strong>
                   <span>
-                    {d.vehicleModel} • {d.vehiclePlate} • {d.distanceKm} km
+                    {d.vehicleModel} • {d.vehiclePlate}
+                    {d.distanceKm !== null ? ` • ${d.distanceKm} km` : ''}
                   </span>
                 </div>
+                <span className={[styles.statusDot, d.isAvailable ? styles.statusOnline : styles.statusOffline].join(' ')}>
+                  {d.isAvailable ? 'Çevrimiçi' : 'Çevrimdışı'}
+                </span>
               </label>
             ))}
           </div>
