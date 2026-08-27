@@ -3,7 +3,7 @@ import { prisma } from '../../lib/prismaClient.js';
 import { requireAuth } from '../../middleware/auth.js';
 import { requireRole } from '../../middleware/requireRole.js';
 import { emitToDriver, emitToRider } from '../../realtime/socket.js';
-import { serializeRide } from '../../lib/serializeRide.js';
+import { serializeRide, serializeDriverInfo } from '../../lib/serializeRide.js';
 
 export const rideOffersRouter = Router();
 
@@ -61,15 +61,7 @@ rideOffersRouter.post('/:id/accept', requireAuth, requireRole('DRIVER'), async (
     rideId: ride.id,
     status: ride.status,
     driverId: ride.driverId,
-    driver: driverProfile
-      ? {
-          name: driverProfile.user.name,
-          vehiclePlate: driverProfile.vehiclePlate,
-          vehicleModel: driverProfile.vehicleModel,
-          currentLat: driverProfile.currentLat,
-          currentLng: driverProfile.currentLng,
-        }
-      : null,
+    driver: driverProfile ? serializeDriverInfo(driverProfile) : null,
   });
 
   res.json({ ride: serializeRide(ride) });

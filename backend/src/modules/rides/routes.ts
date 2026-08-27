@@ -6,7 +6,19 @@ import { requireRole } from '../../middleware/requireRole.js';
 import { getRoute } from '../../lib/osrmClient.js';
 import { getActivePricingConfig, computePrice } from '../../lib/pricing.js';
 import { dispatchRide } from '../../lib/dispatch.js';
-import { serializeRide } from '../../lib/serializeRide.js';
+import { serializeRide, serializeDriverInfo } from '../../lib/serializeRide.js';
+import { emitToDriver, emitToRider } from '../../realtime/socket.js';
+
+const ACTIVE_STATUSES = ['REQUESTED', 'DISPATCHING', 'ACCEPTED', 'DRIVER_ARRIVING', 'IN_PROGRESS'] as const;
+
+async function getDriverInfoForRide(driverId: string | null) {
+  if (!driverId) return null;
+  const driverProfile = await prisma.driverProfile.findUnique({
+    where: { userId: driverId },
+    include: { user: true },
+  });
+  return driverProfile ? serializeDriverInfo(driverProfile) : null;
+}
 
 export const ridesRouter = Router();
 
@@ -115,18 +127,57 @@ ridesRouter.post('/', requireAuth, requireRole('RIDER'), async (req, res) => {
   }
 });
 
+// Restores whichever ride the current user (rider or driver) has in flight —
+// used to rebuild the "active ride" view after a page reload, since it can't
+// rely on one-time navigation state alone.
+ridesRouter.get('/active', requireAuth, async (req, res) => {
+  const { userId, role } = req.auth!;
+  const ride = await prisma.ride.findFirst({
+    where: {
+      status: { in: [...ACTIVE_STATUSES] },
+      ...(role === 'DRIVER' ? { driverId: userId } : { riderId: userId }),
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+
+  if (!ride) {
+    res.json({ ride: null, driver: null });
+    return;
+  }
+
+  const driver = await getDriverInfoForRide(ride.driverId);
+  res.json({ ride: serializeRide(ride), driver });
+});
+
 ridesRouter.get('/:id', requireAuth, async (req, res) => {
   const ride = await prisma.ride.findUnique({ where: { id: req.params.id } });
   if (!ride || (ride.riderId !== req.auth!.userId && ride.driverId !== req.auth!.userId)) {
     res.status(404).json({ error: 'Yolculuk bulunamadı.' });
     return;
   }
+  const driver = await getDriverInfoForRide(ride.driverId);
+  res.json({ ride: serializeRide(ride), driver });
+});
+
+ridesRouter.post('/:id/arriving', requireAuth, requireRole('DRIVER'), async (req, res) => {
+  const claim = await prisma.ride.updateMany({
+    where: { id: req.params.id, driverId: req.auth!.userId, status: 'ACCEPTED' },
+    data: { status: 'DRIVER_ARRIVING' },
+  });
+  if (claim.count === 0) {
+    res.status(409).json({ error: 'Bu yolculuk şu an bu durumda güncellenemez.' });
+    return;
+  }
+
+  const ride = await prisma.ride.findUniqueOrThrow({ where: { id: req.params.id } });
+  emitToRider(ride.riderId, 'ride:status', { rideId: ride.id, status: 'DRIVER_ARRIVING' });
   res.json({ ride: serializeRide(ride) });
 });
 
 ridesRouter.post('/:id/cancel', requireAuth, async (req, res) => {
+  const { userId, role } = req.auth!;
   const ride = await prisma.ride.findUnique({ where: { id: req.params.id } });
-  if (!ride || ride.riderId !== req.auth!.userId) {
+  if (!ride || (ride.riderId !== userId && ride.driverId !== userId)) {
     res.status(404).json({ error: 'Yolculuk bulunamadı.' });
     return;
   }
@@ -136,16 +187,26 @@ ridesRouter.post('/:id/cancel', requireAuth, async (req, res) => {
     return;
   }
 
+  const cancelledBy = role === 'DRIVER' ? 'Şoför' : 'Yolcu';
   await prisma.$transaction([
     prisma.ride.update({
       where: { id: ride.id },
-      data: { status: 'CANCELLED', cancelledReason: 'Yolcu tarafından iptal edildi' },
+      data: { status: 'CANCELLED', cancelledReason: `${cancelledBy} tarafından iptal edildi` },
     }),
     prisma.rideOffer.updateMany({
       where: { rideId: ride.id, status: 'PENDING' },
       data: { status: 'EXPIRED', respondedAt: new Date() },
     }),
   ]);
+
+  // Let the other party know in real time — the rider needs to stop waiting
+  // if the driver cancels, and the driver needs to clear their active ride
+  // if the rider cancels.
+  if (role === 'DRIVER') {
+    emitToRider(ride.riderId, 'ride:status', { rideId: ride.id, status: 'CANCELLED' });
+  } else if (ride.driverId) {
+    emitToDriver(ride.driverId, 'ride:status', { rideId: ride.id, status: 'CANCELLED' });
+  }
 
   res.status(204).end();
 });

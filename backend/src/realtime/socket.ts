@@ -2,6 +2,7 @@ import type { Server as HttpServer } from 'node:http';
 import { Server as SocketIOServer } from 'socket.io';
 import type { UserRole } from '@prisma/client';
 import { verifyAuthToken } from '../lib/jwt.js';
+import { prisma } from '../lib/prismaClient.js';
 
 let io: SocketIOServer | null = null;
 
@@ -36,6 +37,34 @@ export function createSocketServer(httpServer: HttpServer): SocketIOServer {
     const { userId, role } = socket.data as { userId: string; role: UserRole };
     const room = role === 'DRIVER' ? `driver:${userId}` : `rider:${userId}`;
     socket.join(room);
+
+    // Driver's live position while en route — persisted for future nearby
+    // searches, and relayed to whichever rider is currently on this driver's
+    // active trip so their tracking map can move the car marker in real time.
+    if (role === 'DRIVER') {
+      socket.on('driver:location', (payload: { lat: number; lng: number }) => {
+        if (typeof payload?.lat !== 'number' || typeof payload?.lng !== 'number') return;
+
+        prisma.driverProfile
+          .update({
+            where: { userId },
+            data: { currentLat: payload.lat, currentLng: payload.lng, lastLocationAt: new Date() },
+          })
+          .catch(() => {});
+
+        prisma.ride
+          .findFirst({
+            where: { driverId: userId, status: { in: ['ACCEPTED', 'DRIVER_ARRIVING', 'IN_PROGRESS'] } },
+            select: { id: true, riderId: true },
+          })
+          .then((ride) => {
+            if (ride) {
+              emitToRider(ride.riderId, 'ride:driver_location', { rideId: ride.id, lat: payload.lat, lng: payload.lng });
+            }
+          })
+          .catch(() => {});
+      });
+    }
   });
 
   return io;

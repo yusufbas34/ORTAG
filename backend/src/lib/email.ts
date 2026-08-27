@@ -37,7 +37,7 @@ async function send(to: string, subject: string, text: string): Promise<void> {
 
 export async function sendActivationEmail(email: string, token: string): Promise<void> {
   const link = `http://localhost:5173/verify-email?token=${token}`;
-  await send(email, 'TAG - Hesabını doğrula', `Hesabını doğrulamak için: ${link}`);
+  await send(email, 'YOL - Hesabını doğrula', `Hesabını doğrulamak için: ${link}`);
 }
 
 export async function sendReservationOfferEmail(
@@ -56,7 +56,7 @@ export async function sendReservationOfferEmail(
     hour: '2-digit',
     minute: '2-digit',
   });
-  const subject = `TAG - Yeni randevu talebi (${when})`;
+  const subject = `YOL - Yeni randevu talebi (${when})`;
   const text = [
     `Yeni bir randevulu yolculuk talebin var.`,
     ``,
@@ -66,7 +66,7 @@ export async function sendReservationOfferEmail(
     `Mesafe: ${details.distanceKm} km`,
     `Ücret: ₺${details.priceTry}`,
     ``,
-    `Kabul etmek veya reddetmek için TAG uygulamasını aç.`,
+    `Kabul etmek veya reddetmek için YOL uygulamasını aç.`,
   ].join('\n');
   await send(email, subject, text);
 }

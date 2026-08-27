@@ -9,5 +9,5 @@ const httpServer = createServer(app);
 createSocketServer(httpServer);
 
 httpServer.listen(PORT, () => {
-  console.log(`TAG backend listening on http://localhost:${PORT}`);
+  console.log(`YOL backend listening on http://localhost:${PORT}`);
 });

@@ -25,7 +25,7 @@ async function main() {
   const admin = await upsertUser({
     email: 'admin@tag.app',
     password: 'admin1234',
-    name: 'TAG Admin',
+    name: 'YOL Admin',
     role: 'ADMIN',
   });
   console.log('admin:', admin.email);
@@ -54,7 +54,7 @@ async function main() {
     update: {},
     create: {
       userId: driverStandard.id,
-      vehiclePlate: '34 TAG 001',
+      vehiclePlate: '34 YOL 001',
       vehicleModel: 'Toyota Corolla',
       vehicleType: 'STANDARD',
       iban: 'TR330006100519786457841326',
@@ -77,7 +77,7 @@ async function main() {
     update: {},
     create: {
       userId: driverXl.id,
-      vehiclePlate: '34 TAG 002',
+      vehiclePlate: '34 YOL 002',
       vehicleModel: 'Volkswagen Transporter',
       vehicleType: 'XL',
       iban: 'TR640001200945678903335044',

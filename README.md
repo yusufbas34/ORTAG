@@ -1,6 +1,6 @@
-# TAG
+# YOL
 
-Martı/Uber benzeri, Türkiye pazarına yönelik taksi çağırma uygulaması. Yolcu, şoför ve admin rolleri; anlık araç çağırma (Araç Bul / Araç Seç), randevulu araç planlama (Araç Planla / Planlı TAG), harita üzerinde rota+fiyat hesaplama (40 TL/km taban ücret, admin %ayarı), Socket.IO ile gerçek zamanlı şoför kabul/red akışı ve iPhone'a kurulabilir PWA arayüzü.
+Martı/Uber benzeri, Türkiye pazarına yönelik taksi çağırma uygulaması. Yolcu, şoför ve admin rolleri; anlık araç çağırma (Araç Bul / Araç Seç), randevulu araç planlama (Araç Planla / Planlı YOL), harita üzerinde rota+fiyat hesaplama (40 TL/km taban ücret, admin %ayarı), Socket.IO ile gerçek zamanlı şoför kabul/red akışı ve iPhone'a kurulabilir PWA arayüzü.
 
 ## Proje yapısı
 

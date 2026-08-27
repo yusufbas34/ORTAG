@@ -1,5 +1,23 @@
 import type { DispatchMode, PaymentMethod, VehicleType } from '@prisma/client';
 
+export function serializeDriverInfo(driverProfile: {
+  user: { name: string };
+  vehiclePlate: string;
+  vehicleModel: string;
+  iban: string;
+  currentLat: number | null;
+  currentLng: number | null;
+}) {
+  return {
+    name: driverProfile.user.name,
+    vehiclePlate: driverProfile.vehiclePlate,
+    vehicleModel: driverProfile.vehicleModel,
+    iban: driverProfile.iban,
+    currentLat: driverProfile.currentLat,
+    currentLng: driverProfile.currentLng,
+  };
+}
+
 export function serializeRide(ride: {
   id: string;
   riderId: string;

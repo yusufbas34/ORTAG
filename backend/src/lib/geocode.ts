@@ -1,5 +1,5 @@
 const NOMINATIM_BASE_URL = process.env.NOMINATIM_BASE_URL ?? 'https://nominatim.openstreetmap.org';
-const USER_AGENT = 'TAG-ride-app/1.0';
+const USER_AGENT = 'YOL-ride-app/1.0';
 
 export interface GeocodeResult {
   address: string;
