@@ -2,6 +2,7 @@ import type { DispatchMode, VehicleType } from '@prisma/client';
 import { prisma } from './prismaClient.js';
 import { findNearbyDrivers } from './nearbyDrivers.js';
 import { emitToDriver, emitToRider } from '../realtime/socket.js';
+import { sendPushToUser } from './push.js';
 
 const DISPATCH_TIMEOUT_MS = 20_000;
 const BROADCAST_CANDIDATE_COUNT = 5;
@@ -32,6 +33,7 @@ export async function dispatchRide(params: {
   if (targetDriverIds.length === 0) {
     const ride = await prisma.ride.update({ where: { id: rideId }, data: { status: 'NO_DRIVER_FOUND' } });
     emitToRider(ride.riderId, 'ride:status', { rideId, status: 'NO_DRIVER_FOUND' });
+    sendPushToUser(ride.riderId, { title: 'Uygun şoför bulunamadı', body: 'Şu an yakınında müsait şoför yok, tekrar dene.' }).catch(() => {});
     return { dispatched: false };
   }
 
@@ -51,6 +53,14 @@ export async function dispatchRide(params: {
       paymentMethod: ride.paymentMethod,
       expiresInSec: DISPATCH_TIMEOUT_MS / 1000,
     });
+    // A driver's socket connection drops the moment the app is backgrounded
+    // or the phone sleeps — push is the only way a time-sensitive new ride
+    // request can still reach them, so this fires alongside the socket event
+    // rather than as a fallback for it.
+    sendPushToUser(offer.driverId, {
+      title: 'Yeni Yolculuk Talebi!',
+      body: `${ride.pickupAddress} → ${ride.dropoffAddress} • ₺${ride.priceTry}`,
+    }).catch(() => {});
   }
 
   setTimeout(() => {
@@ -75,6 +85,7 @@ async function expireRideIfUnaccepted(rideId: string) {
   ]);
 
   emitToRider(ride.riderId, 'ride:status', { rideId, status: 'NO_DRIVER_FOUND' });
+  sendPushToUser(ride.riderId, { title: 'Uygun şoför bulunamadı', body: 'Kimse yolculuğunu zamanında kabul etmedi, tekrar dene.' }).catch(() => {});
   for (const offer of pendingOffers) {
     emitToDriver(offer.driverId, 'ride:offer_closed', { offerId: offer.id, reason: 'expired' });
   }

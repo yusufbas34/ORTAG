@@ -46,6 +46,8 @@ export async function sendPushToUser(userId: string, payload: PushPayload): Prom
         // so we stop wasting a request on it every time.
         if (statusCode === 404 || statusCode === 410) {
           await prisma.pushSubscription.delete({ where: { id: sub.id } }).catch(() => {});
+        } else {
+          console.error('[push] sendNotification failed', statusCode ?? err);
         }
       }
     }),

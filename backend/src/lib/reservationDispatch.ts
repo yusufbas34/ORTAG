@@ -3,6 +3,7 @@ import { prisma } from './prismaClient.js';
 import { findNearbyDrivers } from './nearbyDrivers.js';
 import { emitToDriver } from '../realtime/socket.js';
 import { sendReservationOfferEmail } from './email.js';
+import { sendPushToUser } from './push.js';
 
 const BROADCAST_CANDIDATE_COUNT = 5;
 
@@ -57,6 +58,14 @@ export async function dispatchReservation(params: {
       paymentMethod: reservation.paymentMethod,
       routeGeometry: reservation.routeGeometry,
     });
+
+    // Same reasoning as instant rides: the socket event only reaches a driver
+    // whose app happens to be open right now, so push (and email, below) are
+    // what actually get a scheduled-pickup request in front of them.
+    sendPushToUser(offer.driverId, {
+      title: 'Yeni Randevu Talebi!',
+      body: `${reservation.pickupAddress} → ${reservation.dropoffAddress} • ₺${reservation.priceTry}`,
+    }).catch(() => {});
 
     // Best-effort — a driver who's offline right now still gets the reservation
     // request in their inbox, since the socket event only reaches a live connection.
