@@ -8,8 +8,11 @@ backend/dev.db
 backend/dev.db-journal
 backend/.env
 
-# native app credentials (per-developer, from Firebase console)
-frontend/android/app/google-services.json
+# Note: frontend/android/app/google-services.json is intentionally NOT
+# ignored — Google's own docs say it's safe to commit (it only carries
+# project identifiers, no secrets) and the cloud APK build workflow needs
+# it present in the repo. The truly sensitive Firebase credential is the
+# service-account JSON, which lives only in the Railway env var.
 frontend/ios/App/App/GoogleService-Info.plist
 
 # editor

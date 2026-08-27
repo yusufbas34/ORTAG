@@ -1,0 +1,53 @@
+name: Android APK derle
+
+# Bilgisayar gerektirmeden APK üretmek için: bu iş akışını GitHub'ın
+# kendi sunucularında (bulutta) çalıştırır. Actions sekmesinden elle
+# tetiklenebilir (workflow_dispatch) ya da bu branch'e her push'ta otomatik
+# çalışır. Bitince üretilen APK, çalışan işin sayfasındaki "Artifacts"
+# bölümünden indirilebilir (telefon tarayıcısından da).
+on:
+  workflow_dispatch:
+  push:
+    branches: [claude/uber-like-taxi-app-vpixil]
+    paths:
+      - "frontend/**"
+      - ".github/workflows/android-build.yml"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Bağımlılıkları kur
+        run: npm install
+
+      - name: Frontend'i derle
+        run: npm run build --workspace frontend
+
+      - name: Capacitor senkronize et
+        run: npx cap sync android
+        working-directory: frontend
+
+      - name: Gradle'a çalıştırma izni ver
+        run: chmod +x android/gradlew
+        working-directory: frontend
+
+      - name: Debug APK derle
+        run: ./gradlew assembleDebug
+        working-directory: frontend/android
+
+      - name: APK'yı yükle
+        uses: actions/upload-artifact@v4
+        with:
+          name: yol-debug-apk
+          path: frontend/android/app/build/outputs/apk/debug/app-debug.apk

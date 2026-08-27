@@ -65,11 +65,21 @@ iOS Safari'de "Ana Ekrana Ekle" ile kurulabilmesi için sitenin **HTTPS** üzeri
 3. **General** sekmesinde "Your apps" altında Android ikonuna tıkla, uygulama ekle:
    - Android package name: `com.yol.app` (bu, `frontend/capacitor.config.ts` içindeki `appId` ile birebir aynı olmalı).
    - App nickname: "YOL" (opsiyonel).
-4. **`google-services.json` dosyasını indir** ve `frontend/android/app/google-services.json` konumuna koy (bu dosya `.gitignore`'da değil, projene özel olduğu için commit'lemek istemezsen kendin `.gitignore`'a ekleyebilirsin, ama olmadan native push çalışmaz).
+4. **`google-services.json` dosyasını indir** ve repodaki `frontend/android/app/google-services.json` konumuna ekle/commit'le (bu dosya bilinçli olarak `.gitignore`'da değil — Google'ın kendi dokümantasyonuna göre bu dosya bir sır değildir, sadece proje kimlik bilgileri taşır; herkese açık bir repoda bile güvenle tutulabilir). GitHub'ın web arayüzünden ("Add file → Upload files") telefondan bile yüklenebilir.
 5. Sol menüden **Project settings → Service accounts** sekmesine git → **Generate new private key** butonuna bas → bir JSON dosyası iner.
-6. Bu JSON dosyasının **tüm içeriğini** tek satır olarak Railway'deki backend servisinin `FIREBASE_SERVICE_ACCOUNT_JSON` değişkenine yapıştır.
+6. Bu JSON dosyasının **tüm içeriğini** tek satır olarak Railway'deki backend servisinin `FIREBASE_SERVICE_ACCOUNT_JSON` değişkenine yapıştır (bu dosya gerçekten hassastır, sadece Railway'e girilir, repoya asla eklenmez).
 
-### 2. Yerel makinende derleme (Android Studio gerekir)
+### 2. APK derleme — bilgisayarsız (GitHub Actions ile bulutta)
+
+Bilgisayarın/Android Studio'n yoksa `.github/workflows/android-build.yml` iş akışı APK'yı GitHub'ın kendi sunucularında ücretsiz derler:
+
+1. GitHub'da repo sayfasına git → **Actions** sekmesi → soldan **"Android APK derle"** iş akışını seç → **Run workflow** butonuna bas (telefondan da çalışır).
+2. Derleme bitince (birkaç dakika) aynı sayfadaki çalışan işin (run) altında **Artifacts** bölümünde `yol-debug-apk` görünür, dokunup indir.
+3. İndirilen `.zip` dosyasını aç, içindeki `app-debug.apk`'yı telefonunda "Bilinmeyen kaynaklardan yükleme"ye izin vererek kur.
+
+Bu bir **debug APK** — test için birebir çalışır ama Play Store'a yüklenemez (imzasız). `google-services.json` reponda varsa native push da bu APK'da çalışır. `frontend/capacitor.config.ts` içindeki `server.url` alanını gerçek Railway adresinle güncellemeyi unutma; her değiştirdiğinde workflow'u tekrar çalıştırman yeterli, yeniden derleme otomatik.
+
+### 3. APK derleme — bilgisayarın varsa (Android Studio)
 
 ```bash
 cd frontend
@@ -78,11 +88,9 @@ npx cap sync android    # dist/ içeriğini native projeye kopyalar, native bağ
 npm run cap:android     # Android Studio'yu açar (veya: npx cap open android)
 ```
 
-Android Studio açıldıktan sonra üstteki ▶️ (Run) butonuyla bağlı bir cihazda/emülatörde çalıştırabilir, ya da **Build → Generate Signed Bundle/APK** ile Play Store'a yüklenecek `.aab` dosyasını üretebilirsin (imzalama anahtarı oluşturman gerekir — Android Studio bu adımda yönlendirir).
+Android Studio açıldıktan sonra üstteki ▶️ (Run) butonuyla bağlı bir cihazda/emülatörde çalıştırabilir, ya da **Build → Generate Signed Bundle/APK** ile Play Store'a yüklenecek imzalı `.aab` dosyasını üretebilirsin (imzalama anahtarı oluşturman gerekir — Android Studio bu adımda yönlendirir; GitHub Actions ile imzalı build üretmek de mümkündür ama bu README'nin kapsamı dışında, ihtiyacın olunca ayrıca kurarız).
 
-`frontend/capacitor.config.ts` içindeki `server.url` alanı, uygulamanın hangi adresi göstereceğini belirler — projeyi Railway'e (veya kendi domainine) deploy ettikten sonra bu adresi gerçek URL'inle güncelle.
-
-### 3. iOS
+### 4. iOS
 
 iOS derlemesi yalnızca **macOS + Xcode** ile mümkündür (Apple'ın kısıtı, başka platformdan yapılamaz). Bir Mac ve [Apple Developer Program](https://developer.apple.com/programs/) üyeliği ($99/yıl) edindiğinde:
 
