@@ -109,6 +109,7 @@ ridesRouter.post('/', requireAuth, requireRole('RIDER'), async (req, res) => {
         priceTry,
         dispatchMode,
         paymentMethod,
+        routeGeometry: route.geometry,
         status: 'DISPATCHING',
       },
     });

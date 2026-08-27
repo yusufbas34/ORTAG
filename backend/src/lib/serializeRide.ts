@@ -1,5 +1,19 @@
 import type { DispatchMode, PaymentMethod, VehicleType } from '@prisma/client';
 
+export type RouteGeometry = { type: 'LineString'; coordinates: [number, number][] };
+
+function asRouteGeometry(value: unknown): RouteGeometry | null {
+  if (
+    value &&
+    typeof value === 'object' &&
+    (value as { type?: unknown }).type === 'LineString' &&
+    Array.isArray((value as { coordinates?: unknown }).coordinates)
+  ) {
+    return value as RouteGeometry;
+  }
+  return null;
+}
+
 export function serializeDriverInfo(driverProfile: {
   user: { name: string };
   vehiclePlate: string;
@@ -35,6 +49,7 @@ export function serializeRide(ride: {
   dispatchMode: DispatchMode;
   status: string;
   paymentMethod: PaymentMethod;
+  routeGeometry?: unknown;
   cancelledReason?: string | null;
   createdAt: Date;
 }) {
@@ -51,6 +66,7 @@ export function serializeRide(ride: {
     dispatchMode: ride.dispatchMode,
     status: ride.status,
     paymentMethod: ride.paymentMethod,
+    routeGeometry: asRouteGeometry(ride.routeGeometry),
     cancelledReason: ride.cancelledReason ?? null,
     createdAt: ride.createdAt,
   };

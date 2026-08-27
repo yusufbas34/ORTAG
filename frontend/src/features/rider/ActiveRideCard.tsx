@@ -120,7 +120,14 @@ export function ActiveRideCard({
       )}
 
       {isOnTheWay && (
-        <MiniMap pickup={ride.pickup} dropoff={ride.dropoff} driverLocation={driverLocation} height={180} interactive />
+        <MiniMap
+          pickup={ride.pickup}
+          dropoff={ride.dropoff}
+          routeGeometry={ride.routeGeometry}
+          driverLocation={driverLocation}
+          height={180}
+          interactive
+        />
       )}
 
       <div className={styles.route}>
@@ -135,9 +142,21 @@ export function ActiveRideCard({
       </div>
 
       <div className={styles.meta}>
-        <span>{ride.distanceKm} km</span>
-        <span>₺{ride.priceTry}</span>
-        <span>{ride.paymentMethod === 'CASH' ? 'Nakit' : 'IBAN Havale'}</span>
+        <span className={styles.metaChip}>
+          <i className="fa-solid fa-route" />
+          {ride.distanceKm} km
+        </span>
+        <span className={styles.metaChip}>
+          <i className="fa-solid fa-clock" />
+          {ride.durationMin} dk
+        </span>
+        <span className={styles.metaChip}>
+          <i className="fa-solid fa-wallet" />₺{ride.priceTry}
+        </span>
+        <span className={styles.metaChip}>
+          <i className={ride.paymentMethod === 'CASH' ? 'fa-solid fa-money-bill-wave' : 'fa-solid fa-building-columns'} />
+          {ride.paymentMethod === 'CASH' ? 'Nakit' : 'IBAN'}
+        </span>
       </div>
 
       {ride.paymentMethod === 'IBAN_TRANSFER' && driver && isOnTheWay && (

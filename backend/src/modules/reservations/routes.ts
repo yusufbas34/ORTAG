@@ -76,6 +76,7 @@ reservationsRouter.post('/', requireAuth, requireRole('RIDER'), async (req, res)
         dispatchMode,
         scheduledFor: scheduledDate,
         paymentMethod,
+        routeGeometry: route.geometry,
         status: 'PENDING_DISPATCH',
       },
     });

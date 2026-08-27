@@ -4,30 +4,39 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import styles from './MiniMap.module.css';
 
+export interface RouteGeometry {
+  type: 'LineString';
+  coordinates: [number, number][];
+}
+
 interface MiniMapProps {
   pickup: { lat: number; lng: number };
   dropoff: { lat: number; lng: number };
+  routeGeometry?: RouteGeometry | null;
   driverLocation?: { lat: number; lng: number } | null;
   height?: number;
   interactive?: boolean;
 }
 
-function dotIcon(color: string) {
-  return L.divIcon({
-    className: styles.dotWrapper,
-    html: `<div class="${styles.dot}" style="background:${color}"></div>`,
-    iconSize: [14, 14],
-    iconAnchor: [7, 7],
-  });
-}
+const pickupIcon = L.divIcon({
+  className: styles.pickupWrapper,
+  html: `<div class="${styles.pickupPulse}"></div><div class="${styles.pickupDot}"></div>`,
+  iconSize: [28, 28],
+  iconAnchor: [14, 14],
+});
 
-const pickupIcon = dotIcon('#00D26A');
-const dropoffIcon = dotIcon('#0F172A');
+const dropoffIcon = L.divIcon({
+  className: styles.pinWrapper,
+  html: `<div class="${styles.pin}"><i class="fa-solid fa-flag-checkered"></i></div>`,
+  iconSize: [28, 28],
+  iconAnchor: [14, 26],
+});
+
 const carIcon = L.divIcon({
   className: styles.carWrapper,
   html: `<div class="${styles.car}"><i class="fa-solid fa-car"></i></div>`,
-  iconSize: [28, 28],
-  iconAnchor: [14, 14],
+  iconSize: [30, 30],
+  iconAnchor: [15, 15],
 });
 
 function FitBoundsOnce({ points }: { points: [number, number][] }) {
@@ -37,7 +46,7 @@ function FitBoundsOnce({ points }: { points: [number, number][] }) {
   useEffect(() => {
     if (didFit.current) return;
     didFit.current = true;
-    map.fitBounds(L.latLngBounds(points), { padding: [24, 24] });
+    map.fitBounds(L.latLngBounds(points), { padding: [28, 28] });
     // Only frames the map once on mount — once the rider/driver starts
     // panning or zooming manually, live position updates shouldn't yank the
     // view back and fight their gesture.
@@ -47,23 +56,25 @@ function FitBoundsOnce({ points }: { points: [number, number][] }) {
   return null;
 }
 
-// A route preview for list items (reservation cards) and active-ride
-// tracking — real routing geometry isn't stored per-item, so this draws a
-// straight line between pickup/dropoff purely as a visual reference. When
-// `driverLocation` is supplied it also plots a live car marker that moves as
-// new positions arrive. Pass `interactive` to allow pinch/scroll zoom and
-// dragging (used for the live trip-tracking maps, not the small list previews).
-export function MiniMap({ pickup, dropoff, driverLocation, height = 120, interactive = false }: MiniMapProps) {
-  const points: [number, number][] = [
-    [pickup.lat, pickup.lng],
-    [dropoff.lat, dropoff.lng],
-  ];
-  const initialBoundsPoints = driverLocation ? [...points, [driverLocation.lat, driverLocation.lng] as [number, number]] : points;
+// Trip preview + live tracking map. When `routeGeometry` (the actual OSRM
+// road path) is available it's drawn turn-by-turn like a navigation app;
+// otherwise it falls back to a dashed as-the-crow-flies line between the two
+// points (only relevant for rides created before route storage existed).
+// Pass `interactive` to allow pinch/scroll zoom and dragging.
+export function MiniMap({ pickup, dropoff, routeGeometry, driverLocation, height = 120, interactive = false }: MiniMapProps) {
+  const pickupPoint: [number, number] = [pickup.lat, pickup.lng];
+  const dropoffPoint: [number, number] = [dropoff.lat, dropoff.lng];
+  const hasRoute = !!routeGeometry?.coordinates?.length;
+  const routePoints: [number, number][] = hasRoute
+    ? routeGeometry!.coordinates.map(([lng, lat]) => [lat, lng])
+    : [pickupPoint, dropoffPoint];
+
+  const boundsPoints = driverLocation ? [...routePoints, [driverLocation.lat, driverLocation.lng] as [number, number]] : routePoints;
 
   return (
     <div className={[styles.wrapper, interactive ? styles.interactive : ''].join(' ')} style={{ height }}>
       <MapContainer
-        center={points[0]}
+        center={pickupPoint}
         zoom={12}
         zoomControl={interactive}
         dragging={interactive}
@@ -74,11 +85,22 @@ export function MiniMap({ pickup, dropoff, driverLocation, height = 120, interac
         className={styles.map}
       >
         <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-        <Marker position={points[0]} icon={pickupIcon} />
-        <Marker position={points[1]} icon={dropoffIcon} />
+
+        {hasRoute ? (
+          <>
+            {/* Light casing underneath the colored line gives the route a
+                crisp navigation-app look and keeps it legible over any tile. */}
+            <Polyline positions={routePoints} pathOptions={{ color: '#ffffff', weight: 7, opacity: 0.9, lineCap: 'round', lineJoin: 'round' }} />
+            <Polyline positions={routePoints} pathOptions={{ color: '#00B85C', weight: 4, opacity: 0.95, lineCap: 'round', lineJoin: 'round' }} />
+          </>
+        ) : (
+          <Polyline positions={routePoints} pathOptions={{ color: '#00D26A', weight: 3, dashArray: '5 7' }} />
+        )}
+
+        <Marker position={pickupPoint} icon={pickupIcon} />
+        <Marker position={dropoffPoint} icon={dropoffIcon} />
         {driverLocation && <Marker position={[driverLocation.lat, driverLocation.lng]} icon={carIcon} />}
-        <Polyline positions={points} pathOptions={{ color: '#00D26A', weight: 3, dashArray: '5 7' }} />
-        <FitBoundsOnce points={initialBoundsPoints} />
+        <FitBoundsOnce points={boundsPoints} />
       </MapContainer>
     </div>
   );

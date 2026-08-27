@@ -287,20 +287,45 @@ export function DriverHome() {
             {activeRide.status === 'CANCELLED' && activeRide.cancelledReason && (
               <p className={styles.cancelledReasonText}>Sebep: {activeRide.cancelledReason}</p>
             )}
-            <div>
-              <strong>Kalkış:</strong> {activeRide.pickup.address}
-            </div>
-            <div>
-              <strong>Varış:</strong> {activeRide.dropoff.address}
-            </div>
-            <div>
-              {activeRide.distanceKm} km • ₺{activeRide.priceTry} •{' '}
-              {activeRide.paymentMethod === 'CASH' ? 'Nakit' : 'IBAN Havale'}
+            <div className={styles.routeInfo}>
+              <div>
+                <span className={styles.routeDot} style={{ background: 'var(--primary)' }} />
+                {activeRide.pickup.address}
+              </div>
+              <div>
+                <span className={styles.routeDot} style={{ background: 'var(--dark)' }} />
+                {activeRide.dropoff.address}
+              </div>
             </div>
 
             {TRACKING_STATUSES.has(activeRide.status) && (
-              <MiniMap pickup={activeRide.pickup} dropoff={activeRide.dropoff} driverLocation={ownLocation} height={180} interactive />
+              <MiniMap
+                pickup={activeRide.pickup}
+                dropoff={activeRide.dropoff}
+                routeGeometry={activeRide.routeGeometry}
+                driverLocation={ownLocation}
+                height={180}
+                interactive
+              />
             )}
+
+            <div className={styles.meta}>
+              <span className={styles.metaChip}>
+                <i className="fa-solid fa-route" />
+                {activeRide.distanceKm} km
+              </span>
+              <span className={styles.metaChip}>
+                <i className="fa-solid fa-clock" />
+                {activeRide.durationMin} dk
+              </span>
+              <span className={styles.metaChip}>
+                <i className="fa-solid fa-wallet" />₺{activeRide.priceTry}
+              </span>
+              <span className={styles.metaChip}>
+                <i className={activeRide.paymentMethod === 'CASH' ? 'fa-solid fa-money-bill-wave' : 'fa-solid fa-building-columns'} />
+                {activeRide.paymentMethod === 'CASH' ? 'Nakit' : 'IBAN'}
+              </span>
+            </div>
 
             {activeRide.status === 'CANCELLED' || activeRide.status === 'COMPLETED' ? (
               <button className={styles.dismissRideBtn} onClick={handleDismissRide}>

@@ -173,6 +173,7 @@ model Ride {
   dispatchMode    DispatchMode
   status          RideStatus    @default(REQUESTED)
   paymentMethod   PaymentMethod
+  routeGeometry   Json?
   cancelledReason String?
   createdAt       DateTime      @default(now())
   acceptedAt      DateTime?
@@ -213,6 +214,7 @@ model Reservation {
   scheduledFor     DateTime
   status           ReservationStatus  @default(PENDING_DISPATCH)
   paymentMethod    PaymentMethod
+  routeGeometry    Json?
   cancelledReason  String?
   createdAt        DateTime           @default(now())
   confirmedAt      DateTime?

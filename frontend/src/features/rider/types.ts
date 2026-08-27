@@ -6,6 +6,11 @@ export interface LocationPoint {
 
 export type VehicleType = 'STANDARD' | 'XL';
 
+export interface RouteGeometry {
+  type: 'LineString';
+  coordinates: [number, number][];
+}
+
 export interface VehicleQuote {
   vehicleType: VehicleType;
   priceTry: number;
@@ -15,7 +20,7 @@ export interface QuoteResponse {
   distanceKm: number;
   durationMin: number;
   quotes: VehicleQuote[];
-  routeGeometry: { type: 'LineString'; coordinates: [number, number][] };
+  routeGeometry: RouteGeometry;
 }
 
 export type PaymentMethod = 'CASH' | 'IBAN_TRANSFER';
@@ -43,6 +48,7 @@ export interface Ride {
   dispatchMode: 'BROADCAST' | 'DIRECT';
   status: RideStatus;
   paymentMethod: PaymentMethod;
+  routeGeometry?: RouteGeometry | null;
   cancelledReason?: string | null;
   createdAt: string;
 }
@@ -118,5 +124,6 @@ export interface Reservation {
   scheduledFor: string;
   status: ReservationStatus;
   paymentMethod: PaymentMethod;
+  routeGeometry?: RouteGeometry | null;
   createdAt: string;
 }

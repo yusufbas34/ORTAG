@@ -4,6 +4,11 @@ export interface LocationPoint {
   address: string;
 }
 
+export interface RouteGeometry {
+  type: 'LineString';
+  coordinates: [number, number][];
+}
+
 export interface IncomingOffer {
   offerId: string;
   rideId: string;
@@ -24,6 +29,7 @@ export interface AcceptedRide {
   priceTry: number;
   paymentMethod: 'CASH' | 'IBAN_TRANSFER';
   status: string;
+  routeGeometry?: RouteGeometry | null;
   cancelledReason?: string | null;
 }
 
@@ -36,6 +42,7 @@ export interface ReservationSummary {
   priceTry: number;
   paymentMethod: 'CASH' | 'IBAN_TRANSFER';
   status: string;
+  routeGeometry?: RouteGeometry | null;
 }
 
 export interface ReservationOfferItem {
@@ -52,6 +59,7 @@ export interface IncomingReservationOffer {
   distanceKm: number;
   priceTry: number;
   paymentMethod: 'CASH' | 'IBAN_TRANSFER';
+  routeGeometry?: RouteGeometry | null;
 }
 
 export interface RideHistoryItem {

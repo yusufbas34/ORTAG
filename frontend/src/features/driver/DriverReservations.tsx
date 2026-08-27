@@ -45,6 +45,7 @@ export function DriverReservations() {
             distanceKm: offer.distanceKm,
             priceTry: offer.priceTry,
             paymentMethod: offer.paymentMethod,
+            routeGeometry: offer.routeGeometry,
             status: 'PENDING_DISPATCH',
           },
         },
@@ -89,7 +90,7 @@ export function DriverReservations() {
           {pendingOffers.map(({ offerId, reservation }) => (
             <div key={offerId} className={styles.card}>
               <div className={styles.dateTime}>{formatDateTime(reservation.scheduledFor)}</div>
-              <MiniMap pickup={reservation.pickup} dropoff={reservation.dropoff} />
+              <MiniMap pickup={reservation.pickup} dropoff={reservation.dropoff} routeGeometry={reservation.routeGeometry} />
               <div className={styles.route}>
                 {reservation.pickup.address} → {reservation.dropoff.address}
               </div>
@@ -117,7 +118,7 @@ export function DriverReservations() {
             <div key={r.id} className={styles.card}>
               <span className={styles.badge}>Onaylandı</span>
               <div className={styles.dateTime}>{formatDateTime(r.scheduledFor)}</div>
-              <MiniMap pickup={r.pickup} dropoff={r.dropoff} interactive height={160} />
+              <MiniMap pickup={r.pickup} dropoff={r.dropoff} routeGeometry={r.routeGeometry} interactive height={160} />
               <div className={styles.route}>
                 {r.pickup.address} → {r.dropoff.address}
               </div>

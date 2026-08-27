@@ -70,7 +70,7 @@ export function PlannedRides() {
               <span className={styles.dateTime}>{formatDateTime(r.scheduledFor)}</span>
               <span className={[styles.badge, styles[r.status]].join(' ')}>{STATUS_LABEL[r.status]}</span>
             </div>
-            <MiniMap pickup={r.pickup} dropoff={r.dropoff} />
+            <MiniMap pickup={r.pickup} dropoff={r.dropoff} routeGeometry={r.routeGeometry} />
             <div className={styles.route}>
               {r.pickup.address} → {r.dropoff.address}
             </div>

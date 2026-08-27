@@ -1,4 +1,17 @@
 import type { DispatchMode, PaymentMethod, VehicleType } from '@prisma/client';
+import type { RouteGeometry } from './serializeRide.js';
+
+function asRouteGeometry(value: unknown): RouteGeometry | null {
+  if (
+    value &&
+    typeof value === 'object' &&
+    (value as { type?: unknown }).type === 'LineString' &&
+    Array.isArray((value as { coordinates?: unknown }).coordinates)
+  ) {
+    return value as RouteGeometry;
+  }
+  return null;
+}
 
 export function serializeReservation(reservation: {
   id: string;
@@ -18,6 +31,7 @@ export function serializeReservation(reservation: {
   scheduledFor: Date;
   status: string;
   paymentMethod: PaymentMethod;
+  routeGeometry?: unknown;
   createdAt: Date;
 }) {
   return {
@@ -34,6 +48,7 @@ export function serializeReservation(reservation: {
     scheduledFor: reservation.scheduledFor,
     status: reservation.status,
     paymentMethod: reservation.paymentMethod,
+    routeGeometry: asRouteGeometry(reservation.routeGeometry),
     createdAt: reservation.createdAt,
   };
 }

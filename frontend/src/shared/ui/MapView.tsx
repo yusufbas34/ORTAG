@@ -75,7 +75,10 @@ export function MapView({ pickup, dropoff, routeCoordinates, cars = [] }: MapVie
         {dropoff && <Marker position={[dropoff.lat, dropoff.lng]} icon={dropoffIcon} />}
 
         {routeLatLngs && routeLatLngs.length > 1 && (
-          <Polyline positions={routeLatLngs} pathOptions={{ color: '#00D26A', weight: 5 }} />
+          <>
+            <Polyline positions={routeLatLngs} pathOptions={{ color: '#ffffff', weight: 9, opacity: 0.9, lineCap: 'round', lineJoin: 'round' }} />
+            <Polyline positions={routeLatLngs} pathOptions={{ color: '#00B85C', weight: 5, opacity: 0.95, lineCap: 'round', lineJoin: 'round' }} />
+          </>
         )}
 
         <FitBounds points={boundsPoints} />

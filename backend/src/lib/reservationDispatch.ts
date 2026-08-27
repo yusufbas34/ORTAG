@@ -55,6 +55,7 @@ export async function dispatchReservation(params: {
       distanceKm: reservation.distanceKm,
       priceTry: reservation.priceTry,
       paymentMethod: reservation.paymentMethod,
+      routeGeometry: reservation.routeGeometry,
     });
 
     // Best-effort — a driver who's offline right now still gets the reservation
