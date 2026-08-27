@@ -46,6 +46,15 @@ export interface Ride {
   createdAt: string;
 }
 
+export interface DriverContactInfo {
+  name: string;
+  vehiclePlate: string;
+  vehicleModel: string;
+  iban: string;
+  currentLat: number | null;
+  currentLng: number | null;
+}
+
 export interface DriverSummary {
   userId: string;
   name: string;

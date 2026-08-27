@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiClient } from '../../lib/apiClient';
 import { getSocket } from '../../lib/socketClient';
+import { MiniMap } from '../../shared/ui/MiniMap';
 import type { Reservation, ReservationStatus } from './types';
 import styles from './PlannedRides.module.css';
 
@@ -57,7 +58,7 @@ export function PlannedRides() {
         <button className={styles.backBtn} onClick={() => navigate('/rider')} aria-label="Geri">
           <i className="fa-solid fa-arrow-left" />
         </button>
-        <h1>Planlı TAG</h1>
+        <h1>Planlı YOL</h1>
       </div>
 
       <div className={styles.list}>
@@ -69,6 +70,7 @@ export function PlannedRides() {
               <span className={styles.dateTime}>{formatDateTime(r.scheduledFor)}</span>
               <span className={[styles.badge, styles[r.status]].join(' ')}>{STATUS_LABEL[r.status]}</span>
             </div>
+            <MiniMap pickup={r.pickup} dropoff={r.dropoff} />
             <div className={styles.route}>
               {r.pickup.address} → {r.dropoff.address}
             </div>

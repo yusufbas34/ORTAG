@@ -15,7 +15,7 @@ export function AuthLayout({ title, subtitle, error, onSubmit, children, footer 
     <div className={styles.page}>
       <div className={styles.card}>
         <div className={styles.brand}>
-          <div className={styles.logo}>TAG</div>
+          <div className={styles.logo}>YOL</div>
           <h1>{title}</h1>
           <p>{subtitle}</p>
         </div>

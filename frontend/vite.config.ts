@@ -10,8 +10,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['apple-touch-icon.png', 'favicon-32.png'],
       manifest: {
-        name: 'TAG',
-        short_name: 'TAG',
+        name: 'YOL',
+        short_name: 'YOL',
         description: 'Araç çağır, şoför ol, randevunu planla.',
         start_url: '/',
         display: 'standalone',

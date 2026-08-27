@@ -8,7 +8,10 @@ export function RoleSelectLanding() {
   return (
     <div className={styles.page}>
       <div className={styles.brand}>
-        <div className={styles.logo}>TAG</div>
+        <div className={styles.badge}>
+          <i className="fa-solid fa-route" />
+        </div>
+        <div className={styles.logo}>YOL</div>
         <p>Nasıl devam etmek istersin?</p>
       </div>
 

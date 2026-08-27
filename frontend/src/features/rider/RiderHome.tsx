@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Screen } from '../../shared/ui/Screen';
 import { AppHeader } from '../../shared/ui/AppHeader';
 import { MapView } from '../../shared/ui/MapView';
@@ -10,56 +10,35 @@ import { SectionTitle } from '../../shared/ui/SectionTitle';
 import { VehicleOptionCard } from '../../shared/ui/VehicleOptionCard';
 import { PaymentMethodToggle } from '../../shared/ui/PaymentMethodToggle';
 import { Button } from '../../shared/ui/Button';
-import { SearchingOverlay } from '../../shared/ui/SearchingOverlay';
 import { RiderMenu } from '../../shared/ui/RiderMenu';
+import { ActiveRideCard } from './ActiveRideCard';
 import { useDebouncedValue } from '../../shared/hooks/useDebouncedValue';
 import { apiClient } from '../../lib/apiClient';
 import { getCurrentPosition } from '../../lib/geolocation';
 import { getSocket } from '../../lib/socketClient';
-import type { LocationPoint, PaymentMethod, QuoteResponse, Reservation, Ride, RideStatus, VehicleType } from './types';
+import type {
+  DriverContactInfo,
+  LocationPoint,
+  PaymentMethod,
+  QuoteResponse,
+  Reservation,
+  Ride,
+  RideStatus,
+  VehicleType,
+} from './types';
 import styles from './RiderHome.module.css';
 
 type ActiveField = 'pickup' | 'dropoff' | null;
 
-interface AcceptedDriverInfo {
-  name: string;
-  vehiclePlate: string;
-  vehicleModel: string;
-}
+const NON_ACTIVE_STATUSES = new Set<RideStatus>(['COMPLETED', 'CANCELLED', 'NO_DRIVER_FOUND']);
 
 const VEHICLE_META: { id: VehicleType; icon: string; title: string; subtitle: string }[] = [
-  { id: 'STANDARD', icon: 'fa-solid fa-car-side', title: 'TAG Standart', subtitle: '1-4 Kişilik • Hızlı Eşleşme' },
-  { id: 'XL', icon: 'fa-solid fa-van-shuttle', title: 'TAG XL', subtitle: 'Geniş Araç • Konfor' },
+  { id: 'STANDARD', icon: 'fa-solid fa-car-side', title: 'YOL Standart', subtitle: '1-4 Kişilik • Hızlı Eşleşme' },
+  { id: 'XL', icon: 'fa-solid fa-van-shuttle', title: 'YOL XL', subtitle: 'Geniş Araç • Konfor' },
 ];
-
-function overlayContentFor(status: RideStatus, driver: AcceptedDriverInfo | null) {
-  switch (status) {
-    case 'DISPATCHING':
-      return { title: 'Sürücü Aranıyor...', subtitle: 'Yakındaki sürücülere talebin iletiliyor.', icon: '', iconColor: '' };
-    case 'ACCEPTED':
-      return {
-        title: 'Şoförün Yolda!',
-        subtitle: driver ? `${driver.name} • ${driver.vehicleModel} • ${driver.vehiclePlate}` : 'Şoför talebini kabul etti.',
-        icon: 'fa-solid fa-circle-check',
-        iconColor: 'var(--primary)',
-      };
-    case 'NO_DRIVER_FOUND':
-      return {
-        title: 'Uygun Sürücü Bulunamadı',
-        subtitle: 'Lütfen tekrar deneyin veya farklı bir araç tipi seçin.',
-        icon: 'fa-solid fa-triangle-exclamation',
-        iconColor: '#F59E0B',
-      };
-    case 'CANCELLED':
-      return { title: 'Yolculuk İptal Edildi', subtitle: '', icon: 'fa-solid fa-ban', iconColor: 'var(--danger)' };
-    default:
-      return { title: 'Yolculuk Güncelleniyor...', subtitle: '', icon: '', iconColor: '' };
-  }
-}
 
 export function RiderHome() {
   const navigate = useNavigate();
-  const location = useLocation();
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [pickup, setPickup] = useState<LocationPoint | null>(null);
@@ -74,8 +53,10 @@ export function RiderHome() {
   const [quoteLoading, setQuoteLoading] = useState(false);
 
   const [activeRide, setActiveRide] = useState<Ride | null>(null);
-  const [acceptedDriver, setAcceptedDriver] = useState<AcceptedDriverInfo | null>(null);
+  const [acceptedDriver, setAcceptedDriver] = useState<DriverContactInfo | null>(null);
   const [dispatching, setDispatching] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
+  const [driverLocation, setDriverLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [upcomingReservation, setUpcomingReservation] = useState<Reservation | null>(null);
   const activeRideIdRef = useRef<string | null>(null);
 
@@ -155,14 +136,21 @@ export function RiderHome() {
       .finally(() => setQuoteLoading(false));
   }, [pickup?.lat, pickup?.lng, dropoff?.lat, dropoff?.lng]);
 
-  // Resume tracking a ride created on the "Araç Seç" screen.
+  // Restore whatever ride is currently in flight — covers both a fresh
+  // "Araç Seç" hand-off and simply reopening/reloading the app mid-ride.
   useEffect(() => {
-    const state = location.state as { activeRideId?: string } | null;
-    if (state?.activeRideId) {
-      apiClient.get<{ ride: Ride }>(`/rides/${state.activeRideId}`).then(({ ride }) => setActiveRide(ride));
-      navigate(location.pathname, { replace: true, state: null });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    apiClient
+      .get<{ ride: Ride | null; driver: DriverContactInfo | null }>('/rides/active')
+      .then(({ ride, driver }) => {
+        if (ride) {
+          setActiveRide(ride);
+          setAcceptedDriver(driver);
+          if (driver?.currentLat != null && driver?.currentLng != null) {
+            setDriverLocation({ lat: driver.currentLat, lng: driver.currentLng });
+          }
+        }
+      })
+      .catch(() => {});
   }, []);
 
   // Live ride status pushed by the server (Socket.IO) — no polling needed.
@@ -174,18 +162,30 @@ export function RiderHome() {
       rideId: string;
       status: RideStatus;
       driverId?: string | null;
-      driver?: AcceptedDriverInfo | null;
+      driver?: DriverContactInfo | null;
     }) {
       if (payload.rideId !== activeRideIdRef.current) return;
       setActiveRide((prev) =>
         prev ? { ...prev, status: payload.status, driverId: payload.driverId ?? prev.driverId } : prev,
       );
-      if (payload.driver) setAcceptedDriver(payload.driver);
+      if (payload.driver) {
+        setAcceptedDriver(payload.driver);
+        if (payload.driver.currentLat != null && payload.driver.currentLng != null) {
+          setDriverLocation({ lat: payload.driver.currentLat, lng: payload.driver.currentLng });
+        }
+      }
+    }
+
+    function handleDriverLocation(payload: { rideId: string; lat: number; lng: number }) {
+      if (payload.rideId !== activeRideIdRef.current) return;
+      setDriverLocation({ lat: payload.lat, lng: payload.lng });
     }
 
     socket.on('ride:status', handleStatus);
+    socket.on('ride:driver_location', handleDriverLocation);
     return () => {
       socket.off('ride:status', handleStatus);
+      socket.off('ride:driver_location', handleDriverLocation);
     };
   }, []);
 
@@ -201,6 +201,7 @@ export function RiderHome() {
         paymentMethod,
       });
       setAcceptedDriver(null);
+      setDriverLocation(null);
       setActiveRide(ride);
     } finally {
       setDispatching(false);
@@ -216,12 +217,19 @@ export function RiderHome() {
 
   async function handleCancel() {
     if (!activeRide) return;
+    setCancelling(true);
     try {
       await apiClient.post(`/rides/${activeRide.id}/cancel`);
+      setActiveRide((prev) => (prev ? { ...prev, status: 'CANCELLED' } : prev));
     } finally {
-      setActiveRide(null);
-      setAcceptedDriver(null);
+      setCancelling(false);
     }
+  }
+
+  function handleDismissRide() {
+    setActiveRide(null);
+    setAcceptedDriver(null);
+    setDriverLocation(null);
   }
 
   function selectSuggestion(field: 'pickup' | 'dropoff', suggestion: AddressSuggestion) {
@@ -259,9 +267,10 @@ export function RiderHome() {
   ];
 
   const routeCoordinates = quote?.routeGeometry.coordinates;
-  const overlayActive = activeRide !== null;
-  const overlayContent = activeRide ? overlayContentFor(activeRide.status, acceptedDriver) : undefined;
-  const isDispatching = activeRide?.status === 'DISPATCHING';
+  // While a ride is genuinely in flight, the instant-booking form is hidden —
+  // starting a second overlapping ride from the same screen isn't a real flow.
+  const hasActiveRide = activeRide !== null && !NON_ACTIVE_STATUSES.has(activeRide.status);
+  const showRideOutcome = activeRide !== null;
 
   return (
     <Screen>
@@ -301,62 +310,66 @@ export function RiderHome() {
           </div>
         )}
 
-        <div className={styles.extraDivider}>
-          <span>EKSTRA · HEMEN ARAÇ ÇAĞIR</span>
-        </div>
-
-        <LocationCard rows={rows} />
-
-        {activeField && (
-          <AddressSuggestions suggestions={suggestions} onSelect={(s) => selectSuggestion(activeField, s)} />
+        {showRideOutcome && activeRide && (
+          <ActiveRideCard
+            ride={activeRide}
+            driver={acceptedDriver}
+            driverLocation={driverLocation}
+            cancelling={cancelling}
+            onCancel={handleCancel}
+            onDismiss={handleDismissRide}
+          />
         )}
 
-        <SectionTitle>YOLCULUK SEÇENEKLERİ</SectionTitle>
+        {!hasActiveRide && (
+          <>
+            <div className={styles.extraDivider}>
+              <span>EKSTRA · HEMEN ARAÇ ÇAĞIR</span>
+            </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
-          {VEHICLE_META.map((v) => {
-            const vehicleQuote = quote?.quotes.find((q) => q.vehicleType === v.id);
-            const priceLabel = quoteLoading ? '...' : vehicleQuote ? `₺${vehicleQuote.priceTry}` : '—';
-            const etaLabel = quote ? `${quote.distanceKm} km • ${quote.durationMin} dk` : 'Konum seçin';
+            <LocationCard rows={rows} />
 
-            return (
-              <VehicleOptionCard
-                key={v.id}
-                icon={v.icon}
-                title={v.title}
-                subtitle={v.subtitle}
-                price={priceLabel}
-                eta={etaLabel}
-                active={selectedVehicle === v.id}
-                onClick={() => setSelectedVehicle(v.id)}
-              />
-            );
-          })}
-        </div>
+            {activeField && (
+              <AddressSuggestions suggestions={suggestions} onSelect={(s) => selectSuggestion(activeField, s)} />
+            )}
 
-        <PaymentMethodToggle value={paymentMethod} onChange={setPaymentMethod} />
+            <SectionTitle>YOLCULUK SEÇENEKLERİ</SectionTitle>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <Button onClick={handleFindCar} disabled={!quote || dispatching}>
-            <span>Araç Bul</span>
-            <i className="fa-solid fa-arrow-right" />
-          </Button>
-          <Button variant="ghost" onClick={handleChooseDriver} disabled={!quote || dispatching}>
-            <span>Araç Seç</span>
-          </Button>
-        </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
+              {VEHICLE_META.map((v) => {
+                const vehicleQuote = quote?.quotes.find((q) => q.vehicleType === v.id);
+                const priceLabel = quoteLoading ? '...' : vehicleQuote ? `₺${vehicleQuote.priceTry}` : '—';
+                const etaLabel = quote ? `${quote.distanceKm} km • ${quote.durationMin} dk` : 'Konum seçin';
+
+                return (
+                  <VehicleOptionCard
+                    key={v.id}
+                    icon={v.icon}
+                    title={v.title}
+                    subtitle={v.subtitle}
+                    price={priceLabel}
+                    eta={etaLabel}
+                    active={selectedVehicle === v.id}
+                    onClick={() => setSelectedVehicle(v.id)}
+                  />
+                );
+              })}
+            </div>
+
+            <PaymentMethodToggle value={paymentMethod} onChange={setPaymentMethod} />
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <Button onClick={handleFindCar} disabled={!quote || dispatching}>
+                <span>Araç Bul</span>
+                <i className="fa-solid fa-arrow-right" />
+              </Button>
+              <Button variant="ghost" onClick={handleChooseDriver} disabled={!quote || dispatching}>
+                <span>Araç Seç</span>
+              </Button>
+            </div>
+          </>
+        )}
       </BottomSheet>
-
-      <SearchingOverlay
-        active={overlayActive}
-        title={overlayContent?.title}
-        subtitle={overlayContent?.subtitle}
-        spinning={isDispatching}
-        icon={overlayContent?.icon}
-        iconColor={overlayContent?.iconColor}
-        cancelLabel={isDispatching ? 'Aramayı İptal Et' : 'Kapat'}
-        onCancel={isDispatching ? handleCancel : () => setActiveRide(null)}
-      />
 
       {menuOpen && <RiderMenu onClose={() => setMenuOpen(false)} />}
     </Screen>

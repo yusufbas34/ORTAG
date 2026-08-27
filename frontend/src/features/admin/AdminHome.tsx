@@ -97,11 +97,11 @@ export function AdminHome() {
 
           <div className={styles.preview}>
             <div className={styles.previewCard}>
-              <div className={styles.label}>TAG Standart (10 km)</div>
+              <div className={styles.label}>YOL Standart (10 km)</div>
               <div className={styles.value}>₺{previewStandard}</div>
             </div>
             <div className={styles.previewCard}>
-              <div className={styles.label}>TAG XL (10 km)</div>
+              <div className={styles.label}>YOL XL (10 km)</div>
               <div className={styles.value}>₺{previewXl}</div>
             </div>
           </div>

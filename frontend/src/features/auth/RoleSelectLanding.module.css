@@ -13,15 +13,33 @@
   text-align: center;
 }
 
+.badge {
+  width: 72px;
+  height: 72px;
+  margin: 0 auto 18px;
+  border-radius: 22px;
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 14px 30px rgba(0, 210, 106, 0.35);
+}
+
+.badge i {
+  font-size: 1.9rem;
+  color: #fff;
+}
+
 .brand .logo {
   font-size: 2.4rem;
-  font-weight: 700;
-  color: var(--primary);
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  color: #fff;
 }
 
 .brand p {
   color: #94a3b8;
-  margin-top: 8px;
+  margin-top: 10px;
 }
 
 .options {

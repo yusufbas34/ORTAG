@@ -18,7 +18,7 @@ export function RiderMenu({ onClose }: RiderMenuProps) {
   return (
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.panel} onClick={(e) => e.stopPropagation()}>
-        <div className={styles.brand}>TAG</div>
+        <div className={styles.brand}>YOL</div>
 
         <button className={styles.item} onClick={() => navigate('/rider')}>
           <i className="fa-solid fa-house" />
@@ -30,7 +30,7 @@ export function RiderMenu({ onClose }: RiderMenuProps) {
         </button>
         <button className={styles.item} onClick={() => navigate('/rider/planned')}>
           <i className="fa-solid fa-calendar-check" />
-          Planlı TAG
+          Planlı YOL
         </button>
 
         <div className={styles.spacer} />

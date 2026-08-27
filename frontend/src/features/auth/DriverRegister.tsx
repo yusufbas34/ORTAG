@@ -79,8 +79,8 @@ export function DriverRegister() {
         value={vehicleType}
         onChange={(e) => setVehicleType(e.target.value as 'STANDARD' | 'XL')}
       >
-        <option value="STANDARD">TAG Standart</option>
-        <option value="XL">TAG XL</option>
+        <option value="STANDARD">YOL Standart</option>
+        <option value="XL">YOL XL</option>
       </SelectField>
       <TextField
         label="IBAN"

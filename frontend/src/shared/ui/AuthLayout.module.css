@@ -26,7 +26,8 @@
 
 .brand .logo {
   font-size: 1.6rem;
-  font-weight: 700;
+  font-weight: 800;
+  letter-spacing: 0.12em;
   color: var(--primary-dark);
 }
 
