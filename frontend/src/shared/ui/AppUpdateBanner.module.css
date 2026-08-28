@@ -1,0 +1,48 @@
+.banner {
+  margin: 0 20px 14px;
+  padding: 12px 14px;
+  background: #EFF6FF;
+  border: 1px solid #BFDBFE;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.banner i {
+  color: #1D4ED8;
+  flex-shrink: 0;
+}
+
+.banner span {
+  flex: 1;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #1E3A8A;
+}
+
+.actionBtn {
+  flex-shrink: 0;
+  border: none;
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  background: #1D4ED8;
+  color: #fff;
+  cursor: pointer;
+}
+
+.closeBtn {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: none;
+  background: none;
+  color: #1E3A8A;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

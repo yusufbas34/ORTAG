@@ -17,7 +17,9 @@ import { ActiveRideCard } from './ActiveRideCard';
 import { useDebouncedValue } from '../../shared/hooks/useDebouncedValue';
 import { useRideChat } from '../../shared/hooks/useRideChat';
 import { usePushStatus } from '../../shared/hooks/usePushStatus';
+import { useAppUpdateCheck } from '../../shared/hooks/useAppUpdateCheck';
 import { NotificationSetupBanner } from '../../shared/ui/NotificationSetupBanner';
+import { AppUpdateBanner } from '../../shared/ui/AppUpdateBanner';
 import { apiClient } from '../../lib/apiClient';
 import { getCurrentPosition } from '../../lib/geolocation';
 import { getSocket } from '../../lib/socketClient';
@@ -72,6 +74,7 @@ export function RiderHome() {
   const activeRideIdRef = useRef<string | null>(null);
   const chat = useRideChat(activeRide?.driverId ? activeRide.id : null);
   const pushStatus = usePushStatus();
+  const appUpdate = useAppUpdateCheck();
 
   const activeInputValue = activeField === 'pickup' ? pickupInput : activeField === 'dropoff' ? dropoffInput : '';
   const debouncedQuery = useDebouncedValue(activeInputValue, 400);
@@ -346,6 +349,7 @@ export function RiderHome() {
       <MapView pickup={pickup} dropoff={dropoff} routeCoordinates={routeCoordinates} />
 
       <BottomSheet>
+        {appUpdate.updateInfo && <AppUpdateBanner info={appUpdate.updateInfo} onDismiss={appUpdate.dismiss} />}
         {pushStatus.enabled === false && <NotificationSetupBanner onEnabled={pushStatus.refresh} />}
 
         <div className={styles.planHero} onClick={() => navigate('/rider/plan')} role="button" tabIndex={0}>

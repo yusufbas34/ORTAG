@@ -8,8 +8,10 @@ import { enablePushNotifications } from '../../lib/push';
 import { playAlert } from '../../lib/sound';
 import { useRideChat } from '../../shared/hooks/useRideChat';
 import { usePushStatus } from '../../shared/hooks/usePushStatus';
+import { useAppUpdateCheck } from '../../shared/hooks/useAppUpdateCheck';
 import { RideChatPanel } from '../../shared/ui/RideChatPanel';
 import { NotificationSetupBanner } from '../../shared/ui/NotificationSetupBanner';
+import { AppUpdateBanner } from '../../shared/ui/AppUpdateBanner';
 import { IncomingOfferOverlay } from './IncomingOfferOverlay';
 import { DriverReservations } from './DriverReservations';
 import { MiniMap } from '../../shared/ui/MiniMap';
@@ -45,6 +47,7 @@ export function DriverHome() {
   const locationWatchIdRef = useRef<number | null>(null);
   const chat = useRideChat(activeRide?.id ?? null);
   const pushStatus = usePushStatus();
+  const appUpdate = useAppUpdateCheck();
 
   useEffect(() => {
     apiClient.get<{ profile: DriverProfile }>('/drivers/me').then(({ profile }) => setProfile(profile));
@@ -282,6 +285,7 @@ export function DriverHome() {
 
       {locationWarning && <p className={styles.locationWarning}>{locationWarning}</p>}
 
+      {appUpdate.updateInfo && <AppUpdateBanner info={appUpdate.updateInfo} onDismiss={appUpdate.dismiss} />}
       {pushStatus.enabled === false && <NotificationSetupBanner onEnabled={pushStatus.refresh} />}
 
       <div className={styles.body}>

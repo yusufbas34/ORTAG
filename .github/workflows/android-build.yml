@@ -13,6 +13,9 @@ on:
       - "frontend/**"
       - ".github/workflows/android-build.yml"
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -57,3 +60,18 @@ jobs:
         with:
           name: yol-debug-apk
           path: frontend/android/app/build/outputs/apk/debug/app-debug.apk
+
+      # "apk-latest" sabit bir tag'e her seferinde yeniden yayınlanır, bu
+      # yüzden indirme linki hiç değişmez — kullanıcı sürekli aynı adresten
+      # (Ayarlar/Bildirim menüsündeki "Uygulamayı Güncelle" linki) en güncel
+      # APK'yı indirebilir.
+      - name: Sabit sürüme yayınla (apk-latest)
+        run: |
+          cp frontend/android/app/build/outputs/apk/debug/app-debug.apk yol.apk
+          gh release delete apk-latest --yes --cleanup-tag || true
+          gh release create apk-latest yol.apk \
+            --title "YOL - Güncel APK" \
+            --notes "Otomatik olarak her push'ta güncellenir. Commit: ${{ github.sha }}" \
+            --repo "${{ github.repository }}"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

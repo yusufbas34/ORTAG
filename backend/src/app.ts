@@ -34,6 +34,16 @@ export function createApp() {
     res.json({ ok: true });
   });
 
+  // Railway sets this automatically on every deploy, so the version changes
+  // whenever new code ships — no manual bump needed. The frontend uses it to
+  // notice a fresh deploy and nudge the user to reload / update the APK.
+  app.get('/api/app-version', (_req, res) => {
+    res.json({
+      version: process.env.RAILWAY_GIT_COMMIT_SHA?.slice(0, 7) ?? 'dev',
+      downloadUrl: 'https://github.com/yusufbas34/ORTAG/releases/download/apk-latest/yol.apk',
+    });
+  });
+
   app.use('/api/auth', authRouter);
   app.use('/api/geocode', geocodeRouter);
   app.use('/api/rides', ridesRouter);
