@@ -4,7 +4,7 @@ import { findNearbyDrivers } from './nearbyDrivers.js';
 import { emitToDriver, emitToRider } from '../realtime/socket.js';
 import { sendPushToUser } from './push.js';
 
-const DISPATCH_TIMEOUT_MS = 20_000;
+const DISPATCH_TIMEOUT_MS = 5 * 60 * 1000;
 const BROADCAST_CANDIDATE_COUNT = 5;
 
 /**

@@ -414,11 +414,9 @@ export function DriverHome() {
                     {completingTrip ? 'Tamamlanıyor...' : 'Yolculuğu Tamamla'}
                   </button>
                 )}
-                {activeRide.status !== 'IN_PROGRESS' && (
-                  <button className={styles.cancelRideBtn} onClick={() => setShowCancelForm(true)}>
-                    İptal Et
-                  </button>
-                )}
+                <button className={styles.cancelRideBtn} onClick={() => setShowCancelForm(true)}>
+                  İptal Et
+                </button>
               </div>
             )}
           </div>

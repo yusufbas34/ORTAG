@@ -9,6 +9,12 @@ interface IncomingOfferOverlayProps {
   onReject: () => void;
 }
 
+function formatCountdown(totalSeconds: number): string {
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+}
+
 export function IncomingOfferOverlay({ offer, responding, onAccept, onReject }: IncomingOfferOverlayProps) {
   const [secondsLeft, setSecondsLeft] = useState(offer.expiresInSec);
 
@@ -23,7 +29,7 @@ export function IncomingOfferOverlay({ offer, responding, onAccept, onReject }: 
   return (
     <div className={styles.overlay}>
       <div className={styles.card}>
-        <div className={styles.countdown}>{secondsLeft}</div>
+        <div className={styles.countdown}>{formatCountdown(secondsLeft)}</div>
         <div className={styles.title}>Yeni Yolculuk Talebi</div>
         <div className={styles.price}>₺{offer.priceTry}</div>
 
