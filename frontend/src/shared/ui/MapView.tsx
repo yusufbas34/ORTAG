@@ -3,6 +3,7 @@ import { MapContainer, TileLayer, Marker, Polyline, useMap } from 'react-leaflet
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useMapStyle } from '../hooks/useMapStyle';
+import { MapAutoResize } from '../hooks/useMapAutoResize';
 import { MapStylePicker } from './MapStylePicker';
 import styles from './MapView.module.css';
 
@@ -98,6 +99,7 @@ export function MapView({ pickup, dropoff, routeCoordinates, cars = [] }: MapVie
         )}
 
         <FitBounds points={boundsPoints} />
+        <MapAutoResize />
       </MapContainer>
 
       <MapStylePicker value={styleId} onChange={setStyleId} className={styles.stylePicker} />

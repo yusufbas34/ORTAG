@@ -5,6 +5,9 @@ import './shared/styles/tokens.css';
 import './shared/styles/global.css';
 import { App } from './App.tsx';
 import { ErrorBoundary } from './shared/ui/ErrorBoundary.tsx';
+import { installLeafletCrashGuard } from './lib/leafletCrashGuard.ts';
+
+installLeafletCrashGuard();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

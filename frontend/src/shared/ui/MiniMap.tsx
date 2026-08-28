@@ -3,6 +3,7 @@ import { MapContainer, TileLayer, Marker, Polyline, useMap } from 'react-leaflet
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useMapStyle } from '../hooks/useMapStyle';
+import { MapAutoResize } from '../hooks/useMapAutoResize';
 import { MapStylePicker } from './MapStylePicker';
 import styles from './MiniMap.module.css';
 
@@ -116,6 +117,7 @@ export function MiniMap({ pickup, dropoff, routeGeometry, driverLocation, height
         <Marker position={dropoffPoint} icon={dropoffIcon} />
         {driverLocation && <Marker position={[driverLocation.lat, driverLocation.lng]} icon={carIcon} />}
         <FitBoundsOnce points={boundsPoints} />
+        <MapAutoResize />
       </MapContainer>
     );
   }
