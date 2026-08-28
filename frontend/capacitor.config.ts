@@ -6,10 +6,8 @@ const config: CapacitorConfig = {
   webDir: 'dist',
   server: {
     // Points the native shell at the deployed backend so the app always
-    // shows the live production site — swap this to your real domain once
-    // you have one, or remove `server` entirely to bundle the built
-    // frontend inside the app instead of loading it over the network.
-    url: 'https://your-railway-app.up.railway.app',
+    // shows the live production site.
+    url: 'https://yol.up.railway.app',
     cleartext: false,
   },
   plugins: {
