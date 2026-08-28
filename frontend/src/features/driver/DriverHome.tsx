@@ -5,6 +5,9 @@ import { apiClient } from '../../lib/apiClient';
 import { getCurrentPosition } from '../../lib/geolocation';
 import { getSocket } from '../../lib/socketClient';
 import { enablePushNotifications } from '../../lib/push';
+import { playAlert } from '../../lib/sound';
+import { useRideChat } from '../../shared/hooks/useRideChat';
+import { RideChatPanel } from '../../shared/ui/RideChatPanel';
 import { IncomingOfferOverlay } from './IncomingOfferOverlay';
 import { DriverReservations } from './DriverReservations';
 import { MiniMap } from '../../shared/ui/MiniMap';
@@ -38,6 +41,7 @@ export function DriverHome() {
   const [ownLocation, setOwnLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [pushEnabling, setPushEnabling] = useState(false);
   const locationWatchIdRef = useRef<number | null>(null);
+  const chat = useRideChat(activeRide?.id ?? null);
 
   useEffect(() => {
     apiClient.get<{ profile: DriverProfile }>('/drivers/me').then(({ profile }) => setProfile(profile));
@@ -59,7 +63,11 @@ export function DriverHome() {
     if (!socket) return;
 
     function handleOffer(offer: IncomingOffer) {
-      setIncomingOffer((current) => current ?? offer);
+      setIncomingOffer((current) => {
+        if (current) return current;
+        playAlert();
+        return offer;
+      });
     }
     function handleOfferClosed(payload: { offerId: string; reason: string }) {
       setIncomingOffer((current) => (current?.offerId === payload.offerId ? null : current));
@@ -273,17 +281,23 @@ export function DriverHome() {
       <div className={styles.body}>
         {activeRide ? (
           <div className={styles.activeRideCard}>
-            <span className={styles.badge}>
-              {activeRide.status === 'CANCELLED'
-                ? 'İptal Edildi'
-                : activeRide.status === 'COMPLETED'
-                  ? 'Tamamlandı'
-                  : activeRide.status === 'IN_PROGRESS'
-                    ? 'Yolculuk Devam Ediyor'
-                    : activeRide.status === 'DRIVER_ARRIVING'
-                      ? 'Yola Çıktın'
-                      : 'Yolculuk Kabul Edildi'}
-            </span>
+            <div className={styles.cardHeaderRow}>
+              <span className={styles.badge}>
+                {activeRide.status === 'CANCELLED'
+                  ? 'İptal Edildi'
+                  : activeRide.status === 'COMPLETED'
+                    ? 'Tamamlandı'
+                    : activeRide.status === 'IN_PROGRESS'
+                      ? 'Yolculuk Devam Ediyor'
+                      : activeRide.status === 'DRIVER_ARRIVING'
+                        ? 'Yola Çıktın'
+                        : 'Yolculuk Kabul Edildi'}
+              </span>
+              <button className={styles.chatBtn} onClick={chat.open} aria-label="Yolcuyla mesajlaş">
+                <i className="fa-solid fa-comment-dots" />
+                {chat.unreadCount > 0 && <span className={styles.chatBadge}>{chat.unreadCount}</span>}
+              </button>
+            </div>
             {activeRide.status === 'CANCELLED' && activeRide.cancelledReason && (
               <p className={styles.cancelledReasonText}>Sebep: {activeRide.cancelledReason}</p>
             )}
@@ -401,6 +415,17 @@ export function DriverHome() {
           responding={responding}
           onAccept={handleAccept}
           onReject={handleReject}
+        />
+      )}
+
+      {chat.isOpen && user && (
+        <RideChatPanel
+          messages={chat.messages}
+          myUserId={user.id}
+          otherPartyName="Yolcu"
+          sending={chat.sending}
+          onSend={chat.sendMessage}
+          onClose={chat.close}
         />
       )}
     </div>

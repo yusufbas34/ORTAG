@@ -7,6 +7,8 @@ import { RiderRegister } from './features/auth/RiderRegister';
 import { DriverLogin } from './features/auth/DriverLogin';
 import { DriverRegister } from './features/auth/DriverRegister';
 import { AdminLogin } from './features/auth/AdminLogin';
+import { ForgotPassword } from './features/auth/ForgotPassword';
+import { ResetPassword } from './features/auth/ResetPassword';
 import { ProtectedRoute } from './features/auth/ProtectedRoute';
 import { RiderHome } from './features/rider/RiderHome';
 import { ChooseDriver } from './features/rider/ChooseDriver';
@@ -40,6 +42,8 @@ export function App() {
         <Route path="/driver/login" element={<DriverLogin />} />
         <Route path="/driver/register" element={<DriverRegister />} />
         <Route path="/admin/login" element={<AdminLogin />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
 
         <Route
           path="/rider"

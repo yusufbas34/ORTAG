@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuthStore } from '../../store/authStore';
 import { Screen } from '../../shared/ui/Screen';
 import { AppHeader } from '../../shared/ui/AppHeader';
 import { MapView } from '../../shared/ui/MapView';
@@ -11,8 +12,10 @@ import { VehicleOptionCard } from '../../shared/ui/VehicleOptionCard';
 import { PaymentMethodToggle } from '../../shared/ui/PaymentMethodToggle';
 import { Button } from '../../shared/ui/Button';
 import { RiderMenu } from '../../shared/ui/RiderMenu';
+import { RideChatPanel } from '../../shared/ui/RideChatPanel';
 import { ActiveRideCard } from './ActiveRideCard';
 import { useDebouncedValue } from '../../shared/hooks/useDebouncedValue';
+import { useRideChat } from '../../shared/hooks/useRideChat';
 import { apiClient } from '../../lib/apiClient';
 import { getCurrentPosition } from '../../lib/geolocation';
 import { getSocket } from '../../lib/socketClient';
@@ -41,6 +44,7 @@ const VEHICLE_META: { id: VehicleType; icon: string; title: string; subtitle: st
 
 export function RiderHome() {
   const navigate = useNavigate();
+  const user = useAuthStore((s) => s.user);
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [pickup, setPickup] = useState<LocationPoint | null>(null);
@@ -64,6 +68,7 @@ export function RiderHome() {
   const [favoriteDriverIds, setFavoriteDriverIds] = useState<Set<string>>(new Set());
   const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([]);
   const activeRideIdRef = useRef<string | null>(null);
+  const chat = useRideChat(activeRide?.driverId ? activeRide.id : null);
 
   const activeInputValue = activeField === 'pickup' ? pickupInput : activeField === 'dropoff' ? dropoffInput : '';
   const debouncedQuery = useDebouncedValue(activeInputValue, 400);
@@ -378,9 +383,22 @@ export function RiderHome() {
             driverEtaMin={driverEtaMin}
             cancelling={cancelling}
             isFavoriteDriver={!!activeRide.driverId && favoriteDriverIds.has(activeRide.driverId)}
+            chatUnreadCount={chat.unreadCount}
             onCancel={handleCancel}
             onDismiss={handleDismissRide}
             onToggleFavorite={handleToggleFavorite}
+            onOpenChat={chat.open}
+          />
+        )}
+
+        {chat.isOpen && user && (
+          <RideChatPanel
+            messages={chat.messages}
+            myUserId={user.id}
+            otherPartyName={acceptedDriver?.name ?? 'Şoför'}
+            sending={chat.sending}
+            onSend={chat.sendMessage}
+            onClose={chat.close}
           />
         )}
 

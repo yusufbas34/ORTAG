@@ -244,6 +244,64 @@ ridesRouter.post('/:id/complete', requireAuth, requireRole('DRIVER'), async (req
   res.json({ ride: serializeRide(ride) });
 });
 
+ridesRouter.get('/:id/messages', requireAuth, async (req, res) => {
+  const ride = await prisma.ride.findUnique({ where: { id: req.params.id } });
+  if (!ride || (ride.riderId !== req.auth!.userId && ride.driverId !== req.auth!.userId)) {
+    res.status(404).json({ error: 'Yolculuk bulunamadı.' });
+    return;
+  }
+
+  const messages = await prisma.rideMessage.findMany({
+    where: { rideId: ride.id },
+    orderBy: { createdAt: 'asc' },
+  });
+  res.json({ messages: messages.map((m) => ({ id: m.id, senderId: m.senderId, body: m.body, createdAt: m.createdAt })) });
+});
+
+ridesRouter.post('/:id/messages', requireAuth, async (req, res) => {
+  const { userId, role } = req.auth!;
+  const ride = await prisma.ride.findUnique({ where: { id: req.params.id } });
+  if (!ride || (ride.riderId !== userId && ride.driverId !== userId)) {
+    res.status(404).json({ error: 'Yolculuk bulunamadı.' });
+    return;
+  }
+  if (!ride.driverId) {
+    res.status(409).json({ error: 'Bu yolculukta henüz eşleşilmiş bir şoför yok.' });
+    return;
+  }
+
+  const { body } = req.body ?? {};
+  if (typeof body !== 'string' || body.trim().length === 0) {
+    res.status(400).json({ error: 'Mesaj boş olamaz.' });
+    return;
+  }
+  const trimmedBody = body.trim().slice(0, 500);
+
+  const message = await prisma.rideMessage.create({
+    data: { rideId: ride.id, senderId: userId, body: trimmedBody },
+  });
+  const payload = {
+    rideId: ride.id,
+    id: message.id,
+    senderId: userId,
+    body: trimmedBody,
+    createdAt: message.createdAt,
+  };
+
+  // The other party might have the app backgrounded/closed, so the socket
+  // event (for whoever has it open right now) is paired with a push
+  // notification the same way every other ride event already is.
+  if (role === 'DRIVER') {
+    emitToRider(ride.riderId, 'ride:message', payload);
+    sendPushToUser(ride.riderId, { title: 'Şoförden mesaj', body: trimmedBody }).catch(() => {});
+  } else {
+    emitToDriver(ride.driverId, 'ride:message', payload);
+    sendPushToUser(ride.driverId, { title: 'Yolcudan mesaj', body: trimmedBody }).catch(() => {});
+  }
+
+  res.status(201).json({ message: payload });
+});
+
 ridesRouter.post('/:id/cancel', requireAuth, async (req, res) => {
   const { userId, role } = req.auth!;
   const ride = await prisma.ride.findUnique({ where: { id: req.params.id } });

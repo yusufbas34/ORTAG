@@ -1,10 +1,13 @@
+import crypto from 'node:crypto';
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import { prisma } from '../../lib/prismaClient.js';
 import { signAuthToken } from '../../lib/jwt.js';
-import { sendActivationEmail } from '../../lib/email.js';
+import { sendActivationEmail, sendPasswordResetEmail } from '../../lib/email.js';
 import { requireAuth } from '../../middleware/auth.js';
 import type { VehicleType } from '@prisma/client';
+
+const PASSWORD_RESET_TTL_MS = 60 * 60 * 1000;
 
 export const authRouter = Router();
 
@@ -134,6 +137,53 @@ authRouter.post('/login', async (req, res) => {
   const token = signAuthToken({ userId: user.id, role: user.role });
   setAuthCookie(res, token);
   res.json({ user: publicUser(user) });
+});
+
+authRouter.post('/forgot-password', async (req, res) => {
+  const { email } = req.body ?? {};
+  if (typeof email !== 'string') {
+    res.status(400).json({ error: 'email zorunludur.' });
+    return;
+  }
+
+  const user = await prisma.user.findUnique({ where: { email } });
+  // Always respond identically whether or not the email is registered —
+  // otherwise this endpoint could be used to check which emails have accounts.
+  if (user) {
+    const token = crypto.randomBytes(32).toString('hex');
+    await prisma.passwordResetToken.create({
+      data: { userId: user.id, token, expiresAt: new Date(Date.now() + PASSWORD_RESET_TTL_MS) },
+    });
+    sendPasswordResetEmail(user.email, token).catch((err) => console.error('[auth] reset email error', err));
+  }
+
+  res.status(204).end();
+});
+
+authRouter.post('/reset-password', async (req, res) => {
+  const { token, password } = req.body ?? {};
+  if (typeof token !== 'string' || typeof password !== 'string') {
+    res.status(400).json({ error: 'token ve password zorunludur.' });
+    return;
+  }
+  if (password.length < 8) {
+    res.status(400).json({ error: 'Şifre en az 8 karakter olmalıdır.' });
+    return;
+  }
+
+  const resetToken = await prisma.passwordResetToken.findUnique({ where: { token } });
+  if (!resetToken || resetToken.usedAt || resetToken.expiresAt < new Date()) {
+    res.status(400).json({ error: 'Bağlantı geçersiz veya süresi dolmuş. Yeni bir sıfırlama bağlantısı iste.' });
+    return;
+  }
+
+  const passwordHash = await bcrypt.hash(password, 10);
+  await prisma.$transaction([
+    prisma.user.update({ where: { id: resetToken.userId }, data: { passwordHash } }),
+    prisma.passwordResetToken.update({ where: { id: resetToken.id }, data: { usedAt: new Date() } }),
+  ]);
+
+  res.status(204).end();
 });
 
 authRouter.post('/logout', (_req, res) => {

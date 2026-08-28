@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { apiClient } from '../../lib/apiClient';
 import { getSocket } from '../../lib/socketClient';
+import { playAlert } from '../../lib/sound';
 import { MiniMap } from '../../shared/ui/MiniMap';
 import type { IncomingReservationOffer, ReservationOfferItem, ReservationSummary } from './types';
 import styles from './DriverReservations.module.css';
@@ -34,6 +35,7 @@ export function DriverReservations() {
     if (!socket) return;
 
     function handleOffer(offer: IncomingReservationOffer) {
+      playAlert();
       setPendingOffers((current) => [
         {
           offerId: offer.offerId,

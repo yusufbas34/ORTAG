@@ -36,8 +36,17 @@ async function send(to: string, subject: string, text: string): Promise<void> {
 }
 
 export async function sendActivationEmail(email: string, token: string): Promise<void> {
-  const link = `http://localhost:5173/verify-email?token=${token}`;
+  const link = `${process.env.FRONTEND_URL ?? 'http://localhost:5173'}/verify-email?token=${token}`;
   await send(email, 'YOL - Hesabını doğrula', `Hesabını doğrulamak için: ${link}`);
+}
+
+export async function sendPasswordResetEmail(email: string, token: string): Promise<void> {
+  const link = `${process.env.FRONTEND_URL ?? 'http://localhost:5173'}/reset-password?token=${token}`;
+  await send(
+    email,
+    'YOL - Şifre sıfırlama',
+    `Şifreni sıfırlamak için: ${link}\n\nBu bağlantı 1 saat içinde geçerliliğini yitirir. Bu isteği sen yapmadıysan bu e-postayı yok sayabilirsin.`,
+  );
 }
 
 export async function sendReservationOfferEmail(

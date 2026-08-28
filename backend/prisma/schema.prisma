@@ -84,6 +84,7 @@ model User {
   savedAddresses    SavedAddress[]
   pushSubscriptions PushSubscription[]
   nativePushTokens  NativePushToken[]
+  passwordResetTokens PasswordResetToken[]
 }
 
 model Favorite {
@@ -128,6 +129,16 @@ model NativePushToken {
   platform  String
   token     String   @unique
   createdAt DateTime @default(now())
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
 }
 
 model RiderProfile {
@@ -193,7 +204,17 @@ model Ride {
   startedAt       DateTime?
   completedAt     DateTime?
 
-  offers RideOffer[]
+  offers   RideOffer[]
+  messages RideMessage[]
+}
+
+model RideMessage {
+  id        String   @id @default(cuid())
+  rideId    String
+  ride      Ride     @relation(fields: [rideId], references: [id], onDelete: Cascade)
+  senderId  String
+  body      String
+  createdAt DateTime @default(now())
 }
 
 model RideOffer {

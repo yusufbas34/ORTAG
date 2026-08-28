@@ -14,7 +14,9 @@ interface NominatimSearchItem {
 }
 
 export async function searchAddress(query: string): Promise<GeocodeResult[]> {
-  const url = `${NOMINATIM_BASE_URL}/search?q=${encodeURIComponent(query)}&format=json&limit=5&countrycodes=tr`;
+  const url =
+    `${NOMINATIM_BASE_URL}/search?q=${encodeURIComponent(query)}&format=json&limit=10&countrycodes=tr` +
+    `&accept-language=tr&addressdetails=1`;
 
   const res = await fetch(url, { headers: { 'User-Agent': USER_AGENT } });
   if (!res.ok) {

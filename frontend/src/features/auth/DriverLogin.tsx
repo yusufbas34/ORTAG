@@ -52,6 +52,11 @@ export function DriverLogin() {
         onChange={(e) => setPassword(e.target.value)}
         required
       />
+      <div style={{ textAlign: 'right', marginTop: '-6px' }}>
+        <Link to="/forgot-password" style={{ fontSize: '0.82rem', color: 'var(--primary-dark)', fontWeight: 700 }}>
+          Şifremi unuttum
+        </Link>
+      </div>
       <Button type="submit" disabled={loading}>
         {loading ? 'Giriş yapılıyor...' : 'Giriş Yap'}
       </Button>

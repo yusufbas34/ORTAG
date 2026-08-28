@@ -10,9 +10,11 @@ interface ActiveRideCardProps {
   driverEtaMin: number | null;
   cancelling: boolean;
   isFavoriteDriver: boolean;
+  chatUnreadCount: number;
   onCancel: (reason: string) => void;
   onDismiss: () => void;
   onToggleFavorite: () => void;
+  onOpenChat: () => void;
 }
 
 const WAITING_STATUSES = new Set(['REQUESTED', 'DISPATCHING']);
@@ -25,9 +27,11 @@ export function ActiveRideCard({
   driverEtaMin,
   cancelling,
   isFavoriteDriver,
+  chatUnreadCount,
   onCancel,
   onDismiss,
   onToggleFavorite,
+  onOpenChat,
 }: ActiveRideCardProps) {
   const [showCancelForm, setShowCancelForm] = useState(false);
   const [reason, setReason] = useState('');
@@ -103,13 +107,19 @@ export function ActiveRideCard({
             <div className={styles.driverName}>
               {driver.name} • {driver.vehicleModel} • {driver.vehiclePlate}
             </div>
-            <button
-              className={[styles.favoriteBtn, isFavoriteDriver ? styles.favoriteActive : ''].join(' ')}
-              onClick={onToggleFavorite}
-              aria-label={isFavoriteDriver ? 'Favorilerden çıkar' : 'Favorilere ekle'}
-            >
-              <i className={isFavoriteDriver ? 'fa-solid fa-heart' : 'fa-regular fa-heart'} />
-            </button>
+            <div className={styles.driverInfoActions}>
+              <button className={styles.chatBtn} onClick={onOpenChat} aria-label="Şoförle mesajlaş">
+                <i className="fa-solid fa-comment-dots" />
+                {chatUnreadCount > 0 && <span className={styles.chatBadge}>{chatUnreadCount}</span>}
+              </button>
+              <button
+                className={[styles.favoriteBtn, isFavoriteDriver ? styles.favoriteActive : ''].join(' ')}
+                onClick={onToggleFavorite}
+                aria-label={isFavoriteDriver ? 'Favorilerden çıkar' : 'Favorilere ekle'}
+              >
+                <i className={isFavoriteDriver ? 'fa-solid fa-heart' : 'fa-regular fa-heart'} />
+              </button>
+            </div>
           </div>
           {driverEtaMin !== null && (
             <div className={styles.etaText}>
