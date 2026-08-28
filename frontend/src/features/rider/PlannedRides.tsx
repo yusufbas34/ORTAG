@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiClient } from '../../lib/apiClient';
-import { getSocket } from '../../lib/socketClient';
+import { onSocketReady } from '../../lib/socketClient';
 import { MiniMap } from '../../shared/ui/MiniMap';
 import type { Reservation, ReservationStatus } from './types';
 import styles from './PlannedRides.module.css';
@@ -36,14 +36,19 @@ export function PlannedRides() {
   }, []);
 
   useEffect(() => {
-    const socket = getSocket();
-    if (!socket) return;
-    function handleStatus() {
-      loadReservations();
-    }
-    socket.on('reservation:status', handleStatus);
+    let cleanup: (() => void) | undefined;
+    const unsubscribeReady = onSocketReady((socket) => {
+      function handleStatus() {
+        loadReservations();
+      }
+      socket.on('reservation:status', handleStatus);
+      cleanup = () => {
+        socket.off('reservation:status', handleStatus);
+      };
+    });
     return () => {
-      socket.off('reservation:status', handleStatus);
+      unsubscribeReady();
+      cleanup?.();
     };
   }, []);
 

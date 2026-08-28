@@ -22,7 +22,7 @@ import { NotificationSetupBanner } from '../../shared/ui/NotificationSetupBanner
 import { AppUpdateBanner } from '../../shared/ui/AppUpdateBanner';
 import { apiClient } from '../../lib/apiClient';
 import { getCurrentPosition } from '../../lib/geolocation';
-import { getSocket } from '../../lib/socketClient';
+import { onSocketReady } from '../../lib/socketClient';
 import type {
   DriverContactInfo,
   FavoriteDriver,
@@ -189,46 +189,55 @@ export function RiderHome() {
 
   // Live ride status pushed by the server (Socket.IO) — no polling needed.
   useEffect(() => {
-    const socket = getSocket();
-    if (!socket) return;
+    let cleanup: (() => void) | undefined;
 
-    function handleStatus(payload: {
-      rideId: string;
-      status: RideStatus;
-      driverId?: string | null;
-      driver?: DriverContactInfo | null;
-      cancelledReason?: string | null;
-    }) {
-      if (payload.rideId !== activeRideIdRef.current) return;
-      setActiveRide((prev) =>
-        prev
-          ? {
-              ...prev,
-              status: payload.status,
-              driverId: payload.driverId ?? prev.driverId,
-              cancelledReason: payload.cancelledReason ?? prev.cancelledReason,
-            }
-          : prev,
-      );
-      if (payload.driver) {
-        setAcceptedDriver(payload.driver);
-        if (payload.driver.currentLat != null && payload.driver.currentLng != null) {
-          setDriverLocation({ lat: payload.driver.currentLat, lng: payload.driver.currentLng });
+    // See onSocketReady's doc comment: connectSocket() can resolve a tick
+    // after this component mounts, so a one-shot getSocket() read here could
+    // permanently miss attaching these listeners.
+    const unsubscribeReady = onSocketReady((socket) => {
+      function handleStatus(payload: {
+        rideId: string;
+        status: RideStatus;
+        driverId?: string | null;
+        driver?: DriverContactInfo | null;
+        cancelledReason?: string | null;
+      }) {
+        if (payload.rideId !== activeRideIdRef.current) return;
+        setActiveRide((prev) =>
+          prev
+            ? {
+                ...prev,
+                status: payload.status,
+                driverId: payload.driverId ?? prev.driverId,
+                cancelledReason: payload.cancelledReason ?? prev.cancelledReason,
+              }
+            : prev,
+        );
+        if (payload.driver) {
+          setAcceptedDriver(payload.driver);
+          if (payload.driver.currentLat != null && payload.driver.currentLng != null) {
+            setDriverLocation({ lat: payload.driver.currentLat, lng: payload.driver.currentLng });
+          }
         }
       }
-    }
 
-    function handleDriverLocation(payload: { rideId: string; lat: number; lng: number; etaMin?: number }) {
-      if (payload.rideId !== activeRideIdRef.current) return;
-      setDriverLocation({ lat: payload.lat, lng: payload.lng });
-      if (typeof payload.etaMin === 'number') setDriverEtaMin(payload.etaMin);
-    }
+      function handleDriverLocation(payload: { rideId: string; lat: number; lng: number; etaMin?: number }) {
+        if (payload.rideId !== activeRideIdRef.current) return;
+        setDriverLocation({ lat: payload.lat, lng: payload.lng });
+        if (typeof payload.etaMin === 'number') setDriverEtaMin(payload.etaMin);
+      }
 
-    socket.on('ride:status', handleStatus);
-    socket.on('ride:driver_location', handleDriverLocation);
+      socket.on('ride:status', handleStatus);
+      socket.on('ride:driver_location', handleDriverLocation);
+      cleanup = () => {
+        socket.off('ride:status', handleStatus);
+        socket.off('ride:driver_location', handleDriverLocation);
+      };
+    });
+
     return () => {
-      socket.off('ride:status', handleStatus);
-      socket.off('ride:driver_location', handleDriverLocation);
+      unsubscribeReady();
+      cleanup?.();
     };
   }, []);
 

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { apiClient } from '../../lib/apiClient';
-import { getSocket } from '../../lib/socketClient';
+import { onSocketReady } from '../../lib/socketClient';
 import { playChime } from '../../lib/sound';
 
 export interface RideChatMessage {
@@ -39,20 +39,28 @@ export function useRideChat(rideId: string | null) {
   }, [isOpen]);
 
   useEffect(() => {
-    const socket = getSocket();
-    if (!socket) return;
+    let cleanup: (() => void) | undefined;
 
-    function handleMessage(payload: RideChatMessage & { rideId: string }) {
-      if (payload.rideId !== rideIdRef.current) return;
-      setMessages((prev) => [...prev, payload]);
-      if (isOpenRef.current) return;
-      setUnreadCount((n) => n + 1);
-      playChime();
-    }
+    // connectSocket() can finish a tick after this hook mounts — a one-shot
+    // getSocket() read here could permanently miss attaching this listener.
+    const unsubscribeReady = onSocketReady((socket) => {
+      function handleMessage(payload: RideChatMessage & { rideId: string }) {
+        if (payload.rideId !== rideIdRef.current) return;
+        setMessages((prev) => [...prev, payload]);
+        if (isOpenRef.current) return;
+        setUnreadCount((n) => n + 1);
+        playChime();
+      }
 
-    socket.on('ride:message', handleMessage);
+      socket.on('ride:message', handleMessage);
+      cleanup = () => {
+        socket.off('ride:message', handleMessage);
+      };
+    });
+
     return () => {
-      socket.off('ride:message', handleMessage);
+      unsubscribeReady();
+      cleanup?.();
     };
   }, []);
 

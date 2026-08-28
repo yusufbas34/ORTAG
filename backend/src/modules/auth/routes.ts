@@ -199,3 +199,15 @@ authRouter.get('/me', requireAuth, async (req, res) => {
   }
   res.json({ user: publicUser(user) });
 });
+
+// Only the display name is editable here — email changes would need a new
+// verification round-trip, which is out of scope for now.
+authRouter.patch('/me', requireAuth, async (req, res) => {
+  const { name } = req.body ?? {};
+  if (typeof name !== 'string' || name.trim().length < 2) {
+    res.status(400).json({ error: 'İsim en az 2 karakter olmalıdır.' });
+    return;
+  }
+  const user = await prisma.user.update({ where: { id: req.auth!.userId }, data: { name: name.trim() } });
+  res.json({ user: publicUser(user) });
+});

@@ -3,13 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 import { apiClient } from '../../lib/apiClient';
 import { getCurrentPosition } from '../../lib/geolocation';
-import { getSocket } from '../../lib/socketClient';
+import { getSocket, onSocketReady } from '../../lib/socketClient';
 import { enablePushNotifications } from '../../lib/push';
 import { playAlert } from '../../lib/sound';
 import { useRideChat } from '../../shared/hooks/useRideChat';
 import { usePushStatus } from '../../shared/hooks/usePushStatus';
 import { useAppUpdateCheck } from '../../shared/hooks/useAppUpdateCheck';
 import { RideChatPanel } from '../../shared/ui/RideChatPanel';
+import { DriverMenu } from '../../shared/ui/DriverMenu';
 import { NotificationSetupBanner } from '../../shared/ui/NotificationSetupBanner';
 import { AppUpdateBanner } from '../../shared/ui/AppUpdateBanner';
 import { IncomingOfferOverlay } from './IncomingOfferOverlay';
@@ -44,6 +45,8 @@ export function DriverHome() {
   const [locationWarning, setLocationWarning] = useState<string | null>(null);
   const [ownLocation, setOwnLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [pushEnabling, setPushEnabling] = useState(false);
+  const [pushInfoMessage, setPushInfoMessage] = useState<string | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
   const locationWatchIdRef = useRef<number | null>(null);
   const chat = useRideChat(activeRide?.id ?? null);
   const pushStatus = usePushStatus();
@@ -65,35 +68,46 @@ export function DriverHome() {
   }, []);
 
   useEffect(() => {
-    const socket = getSocket();
-    if (!socket) return;
+    let cleanup: (() => void) | undefined;
 
-    function handleOffer(offer: IncomingOffer) {
-      setIncomingOffer((current) => {
-        if (current) return current;
-        playAlert();
-        return offer;
-      });
-    }
-    function handleOfferClosed(payload: { offerId: string; reason: string }) {
-      setIncomingOffer((current) => (current?.offerId === payload.offerId ? null : current));
-    }
-    function handleRideStatus(payload: { rideId: string; status: string; cancelledReason?: string | null }) {
-      setActiveRide((current) => {
-        if (!current || current.id !== payload.rideId) return current;
-        // The rider cancelled from their side — keep the card visible with the
-        // reason so the driver knows why, rather than silently vanishing.
-        return { ...current, status: payload.status, cancelledReason: payload.cancelledReason ?? current.cancelledReason };
-      });
-    }
+    // connectSocket() (called once /auth/me resolves) can finish a tick
+    // after this component mounts — a plain getSocket() read here could see
+    // null and skip attaching forever, silently missing every new ride
+    // offer. onSocketReady fires immediately if the socket already exists,
+    // and again as soon as one is created.
+    const unsubscribeReady = onSocketReady((socket) => {
+      function handleOffer(offer: IncomingOffer) {
+        setIncomingOffer((current) => {
+          if (current) return current;
+          playAlert();
+          return offer;
+        });
+      }
+      function handleOfferClosed(payload: { offerId: string; reason: string }) {
+        setIncomingOffer((current) => (current?.offerId === payload.offerId ? null : current));
+      }
+      function handleRideStatus(payload: { rideId: string; status: string; cancelledReason?: string | null }) {
+        setActiveRide((current) => {
+          if (!current || current.id !== payload.rideId) return current;
+          // The rider cancelled from their side — keep the card visible with the
+          // reason so the driver knows why, rather than silently vanishing.
+          return { ...current, status: payload.status, cancelledReason: payload.cancelledReason ?? current.cancelledReason };
+        });
+      }
 
-    socket.on('ride:offer', handleOffer);
-    socket.on('ride:offer_closed', handleOfferClosed);
-    socket.on('ride:status', handleRideStatus);
+      socket.on('ride:offer', handleOffer);
+      socket.on('ride:offer_closed', handleOfferClosed);
+      socket.on('ride:status', handleRideStatus);
+      cleanup = () => {
+        socket.off('ride:offer', handleOffer);
+        socket.off('ride:offer_closed', handleOfferClosed);
+        socket.off('ride:status', handleRideStatus);
+      };
+    });
+
     return () => {
-      socket.off('ride:offer', handleOffer);
-      socket.off('ride:offer_closed', handleOfferClosed);
-      socket.off('ride:status', handleRideStatus);
+      unsubscribeReady();
+      cleanup?.();
     };
   }, []);
 
@@ -236,6 +250,14 @@ export function DriverHome() {
   }
 
   async function handleEnablePush() {
+    // Once the OS has granted notification permission, an app can't revoke
+    // it from within itself — only the user can, from system settings. So
+    // tapping an already-green bell isn't a broken toggle, it just has
+    // nothing left to do here; explain that instead of silently no-op'ing.
+    if (pushStatus.enabled) {
+      setPushInfoMessage('Bildirimler zaten açık. Kapatmak istersen telefonun Ayarlar > Uygulamalar > YOL > Bildirimler bölümüne gitmen gerekir.');
+      return;
+    }
     setPushEnabling(true);
     try {
       await enablePushNotifications();
@@ -248,19 +270,16 @@ export function DriverHome() {
   return (
     <div className={styles.page}>
       <div className={styles.header}>
-        <div className={styles.greeting}>
-          <h1>Hoş geldin, {user?.name}</h1>
-          <p>{profile ? `${profile.vehicleModel} • ${profile.vehiclePlate}` : ''}</p>
+        <div className={styles.headerLeft}>
+          <button className={styles.bellBtn} onClick={() => setMenuOpen(true)} aria-label="Menü" title="Menü">
+            <i className="fa-solid fa-bars" />
+          </button>
+          <div className={styles.greeting}>
+            <h1>Hoş geldin, {user?.name}</h1>
+            <p>{profile ? `${profile.vehicleModel} • ${profile.vehiclePlate}` : ''}</p>
+          </div>
         </div>
         <div className={styles.toggle}>
-          <button
-            className={styles.bellBtn}
-            onClick={() => navigate('/driver/history')}
-            aria-label="Yolculuk Geçmişi"
-            title="Yolculuk Geçmişi"
-          >
-            <i className="fa-solid fa-clock-rotate-left" />
-          </button>
           <button
             className={[styles.bellBtn, pushStatus.enabled ? styles.bellOn : ''].join(' ')}
             onClick={handleEnablePush}
@@ -284,6 +303,11 @@ export function DriverHome() {
       </div>
 
       {locationWarning && <p className={styles.locationWarning}>{locationWarning}</p>}
+      {pushInfoMessage && (
+        <p className={styles.locationWarning} onClick={() => setPushInfoMessage(null)}>
+          {pushInfoMessage}
+        </p>
+      )}
 
       {appUpdate.updateInfo && <AppUpdateBanner info={appUpdate.updateInfo} onDismiss={appUpdate.dismiss} />}
       {pushStatus.enabled === false && <NotificationSetupBanner onEnabled={pushStatus.refresh} />}
@@ -436,6 +460,15 @@ export function DriverHome() {
           sending={chat.sending}
           onSend={chat.sendMessage}
           onClose={chat.close}
+        />
+      )}
+
+      {menuOpen && (
+        <DriverMenu
+          onClose={() => setMenuOpen(false)}
+          pushEnabled={pushStatus.enabled}
+          pushEnabling={pushEnabling}
+          onEnablePush={handleEnablePush}
         />
       )}
     </div>

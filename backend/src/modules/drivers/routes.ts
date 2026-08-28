@@ -56,6 +56,48 @@ driversRouter.get('/me', requireAuth, requireRole('DRIVER'), async (req, res) =>
   res.json({ profile });
 });
 
+driversRouter.patch('/me', requireAuth, requireRole('DRIVER'), async (req, res) => {
+  const { vehiclePlate, vehicleModel, vehicleType, iban } = req.body ?? {};
+
+  const data: Record<string, string> = {};
+  if (vehiclePlate !== undefined) {
+    if (typeof vehiclePlate !== 'string' || vehiclePlate.trim().length < 3) {
+      res.status(400).json({ error: 'Geçerli bir plaka girin.' });
+      return;
+    }
+    data.vehiclePlate = vehiclePlate.trim().toUpperCase();
+  }
+  if (vehicleModel !== undefined) {
+    if (typeof vehicleModel !== 'string' || vehicleModel.trim().length < 2) {
+      res.status(400).json({ error: 'Geçerli bir araç modeli girin.' });
+      return;
+    }
+    data.vehicleModel = vehicleModel.trim();
+  }
+  if (vehicleType !== undefined) {
+    if (!VEHICLE_TYPES.includes(vehicleType)) {
+      res.status(400).json({ error: 'Geçerli bir araç tipi girin.' });
+      return;
+    }
+    data.vehicleType = vehicleType;
+  }
+  if (iban !== undefined) {
+    if (typeof iban !== 'string' || iban.trim().length < 15) {
+      res.status(400).json({ error: 'Geçerli bir IBAN girin.' });
+      return;
+    }
+    data.iban = iban.trim().toUpperCase();
+  }
+
+  if (Object.keys(data).length === 0) {
+    res.status(400).json({ error: 'Güncellenecek en az bir alan gereklidir.' });
+    return;
+  }
+
+  const profile = await prisma.driverProfile.update({ where: { userId: req.auth!.userId }, data });
+  res.json({ profile });
+});
+
 driversRouter.post('/me/availability', requireAuth, requireRole('DRIVER'), async (req, res) => {
   const { isAvailable, lat, lng } = req.body ?? {};
   if (typeof isAvailable !== 'boolean') {

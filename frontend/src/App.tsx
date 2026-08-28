@@ -19,6 +19,7 @@ import { RideHistory } from './features/rider/RideHistory';
 import { SavedAddresses } from './features/rider/SavedAddresses';
 import { DriverHome } from './features/driver/DriverHome';
 import { DriverHistory } from './features/driver/DriverHistory';
+import { DriverProfile } from './features/driver/DriverProfile';
 import { AdminHome } from './features/admin/AdminHome';
 
 export function App() {
@@ -114,6 +115,14 @@ export function App() {
           element={
             <ProtectedRoute role="DRIVER" redirectTo="/driver/login">
               <DriverHistory />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/driver/profile"
+          element={
+            <ProtectedRoute role="DRIVER" redirectTo="/driver/login">
+              <DriverProfile />
             </ProtectedRoute>
           }
         />

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { apiClient } from '../../lib/apiClient';
-import { getSocket } from '../../lib/socketClient';
+import { onSocketReady } from '../../lib/socketClient';
 import { playAlert } from '../../lib/sound';
 import { MiniMap } from '../../shared/ui/MiniMap';
 import type { IncomingReservationOffer, ReservationOfferItem, ReservationSummary } from './types';
@@ -31,39 +31,48 @@ export function DriverReservations() {
   }, []);
 
   useEffect(() => {
-    const socket = getSocket();
-    if (!socket) return;
+    let cleanup: (() => void) | undefined;
 
-    function handleOffer(offer: IncomingReservationOffer) {
-      playAlert();
-      setPendingOffers((current) => [
-        {
-          offerId: offer.offerId,
-          reservation: {
-            id: offer.reservationId,
-            pickup: offer.pickup,
-            dropoff: offer.dropoff,
-            scheduledFor: offer.scheduledFor,
-            distanceKm: offer.distanceKm,
-            priceTry: offer.priceTry,
-            paymentMethod: offer.paymentMethod,
-            routeGeometry: offer.routeGeometry,
-            status: 'PENDING_DISPATCH',
+    // connectSocket() can finish a tick after this component mounts — a
+    // one-shot getSocket() read here could permanently miss attaching these
+    // listeners, silently dropping every new reservation offer.
+    const unsubscribeReady = onSocketReady((socket) => {
+      function handleOffer(offer: IncomingReservationOffer) {
+        playAlert();
+        setPendingOffers((current) => [
+          {
+            offerId: offer.offerId,
+            reservation: {
+              id: offer.reservationId,
+              pickup: offer.pickup,
+              dropoff: offer.dropoff,
+              scheduledFor: offer.scheduledFor,
+              distanceKm: offer.distanceKm,
+              priceTry: offer.priceTry,
+              paymentMethod: offer.paymentMethod,
+              routeGeometry: offer.routeGeometry,
+              status: 'PENDING_DISPATCH',
+            },
           },
-        },
-        ...current,
-      ]);
-    }
+          ...current,
+        ]);
+      }
 
-    function handleClosed(payload: { offerId: string }) {
-      setPendingOffers((current) => current.filter((o) => o.offerId !== payload.offerId));
-    }
+      function handleClosed(payload: { offerId: string }) {
+        setPendingOffers((current) => current.filter((o) => o.offerId !== payload.offerId));
+      }
 
-    socket.on('reservation:offer', handleOffer);
-    socket.on('reservation:offer_closed', handleClosed);
+      socket.on('reservation:offer', handleOffer);
+      socket.on('reservation:offer_closed', handleClosed);
+      cleanup = () => {
+        socket.off('reservation:offer', handleOffer);
+        socket.off('reservation:offer_closed', handleClosed);
+      };
+    });
+
     return () => {
-      socket.off('reservation:offer', handleOffer);
-      socket.off('reservation:offer_closed', handleClosed);
+      unsubscribeReady();
+      cleanup?.();
     };
   }, []);
 
