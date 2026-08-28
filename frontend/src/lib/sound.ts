@@ -38,9 +38,23 @@ export function playChime() {
   playTones([880, 1320], 140, 0.08);
 }
 
-// A slightly more attention-grabbing double-beep for a new ride/reservation
-// offer — a driver needs to notice this even if they're not looking at the
-// screen.
+// Reused across calls (rather than a new Audio() per alert) so a second
+// offer arriving mid-playback restarts the clip instead of overlapping it.
+const rideAlertAudio = typeof Audio !== 'undefined' ? new Audio('/sounds/ride-alert.mp3') : null;
+if (rideAlertAudio) rideAlertAudio.volume = 0.9;
+
+// A driver needs to notice a new ride/reservation offer even if they're not
+// looking at the screen — this plays a real audio clip instead of a
+// synthesized tone, which reads as more urgent.
 export function playAlert() {
-  playTones([660, 660], 160, 0.1);
+  if (!rideAlertAudio) return;
+  try {
+    rideAlertAudio.currentTime = 0;
+    void rideAlertAudio.play().catch(() => {
+      // Autoplay can be blocked until the user has interacted with the page
+      // at least once — the visual/vibration alert still gets through.
+    });
+  } catch {
+    /* unsupported browser — skip silently */
+  }
 }
