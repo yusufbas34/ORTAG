@@ -4,9 +4,12 @@ import '@fortawesome/fontawesome-free/css/all.min.css';
 import './shared/styles/tokens.css';
 import './shared/styles/global.css';
 import { App } from './App.tsx';
+import { ErrorBoundary } from './shared/ui/ErrorBoundary.tsx';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App />
+    <ErrorBoundary>
+      <App />
+    </ErrorBoundary>
   </StrictMode>,
 );

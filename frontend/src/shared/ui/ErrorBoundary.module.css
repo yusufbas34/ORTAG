@@ -1,0 +1,38 @@
+.page {
+  min-height: 100dvh;
+  background: var(--gray-light);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 32px 20px;
+  gap: 14px;
+}
+
+.page i {
+  font-size: 2.5rem;
+  color: #F59E0B;
+}
+
+.page h1 {
+  font-size: 1.1rem;
+  color: var(--text-main);
+}
+
+.page p {
+  color: var(--text-muted);
+  max-width: 320px;
+}
+
+.reloadBtn {
+  margin-top: 8px;
+  border: none;
+  border-radius: var(--radius-md);
+  padding: 14px 28px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  background: var(--primary);
+  color: #fff;
+  cursor: pointer;
+}

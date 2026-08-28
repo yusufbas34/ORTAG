@@ -48,7 +48,18 @@ function FitBoundsOnce({ points }: { points: [number, number][] }) {
   useEffect(() => {
     if (didFit.current) return;
     didFit.current = true;
-    map.fitBounds(L.latLngBounds(points), { padding: [28, 28] });
+    // Deferred a frame + wrapped defensively: if the container's CSS size
+    // isn't settled yet, fitBounds/setView can throw ("infinite number of
+    // tiles") and, with no error boundary above it, take the whole app down.
+    const raf = requestAnimationFrame(() => {
+      map.invalidateSize();
+      try {
+        map.fitBounds(L.latLngBounds(points), { padding: [28, 28] });
+      } catch (err) {
+        console.error('[MiniMap] harita odaklanamadı', err);
+      }
+    });
+    return () => cancelAnimationFrame(raf);
     // Only frames the map once on mount — once the rider/driver starts
     // panning or zooming manually, live position updates shouldn't yank the
     // view back and fight their gesture.

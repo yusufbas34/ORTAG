@@ -44,11 +44,27 @@ function FitBounds({ points }: { points: [number, number][] }) {
 
   useEffect(() => {
     if (points.length === 0) return;
-    if (points.length === 1) {
-      map.setView(points[0], 15);
-      return;
-    }
-    map.fitBounds(L.latLngBounds(points), { padding: [60, 60] });
+
+    // The map container's CSS size can still be 0x0 on the very first paint
+    // (its height comes from an absolute-positioned ancestor chain that
+    // hasn't settled yet). Calling setView/fitBounds before that makes
+    // Leaflet compute degenerate pixel bounds and throw "Attempted to load
+    // an infinite number of tiles" — with no error boundary in the tree,
+    // that single throw used to take the whole app down to a blank screen.
+    const raf = requestAnimationFrame(() => {
+      map.invalidateSize();
+      try {
+        if (points.length === 1) {
+          map.setView(points[0], 15);
+        } else {
+          map.fitBounds(L.latLngBounds(points), { padding: [60, 60] });
+        }
+      } catch (err) {
+        console.error('[MapView] harita odaklanamadı', err);
+      }
+    });
+
+    return () => cancelAnimationFrame(raf);
   }, [map, points]);
 
   return null;
