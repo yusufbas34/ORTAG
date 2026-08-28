@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 import { enablePushNotifications } from '../../lib/push';
+import { usePushStatus } from '../hooks/usePushStatus';
 import styles from './RiderMenu.module.css';
 
 interface RiderMenuProps {
@@ -18,6 +19,7 @@ const PUSH_RESULT_LABEL: Record<string, string> = {
 export function RiderMenu({ onClose }: RiderMenuProps) {
   const navigate = useNavigate();
   const logout = useAuthStore((s) => s.logout);
+  const pushState = usePushStatus();
   const [pushStatus, setPushStatus] = useState<string | null>(null);
   const [enablingPush, setEnablingPush] = useState(false);
 
@@ -31,6 +33,7 @@ export function RiderMenu({ onClose }: RiderMenuProps) {
     try {
       const result = await enablePushNotifications();
       setPushStatus(PUSH_RESULT_LABEL[result]);
+      pushState.refresh();
     } catch {
       setPushStatus('Bildirimler açılamadı');
     } finally {
@@ -68,8 +71,8 @@ export function RiderMenu({ onClose }: RiderMenuProps) {
           Sık Kullanılan Adreslerim
         </button>
         <button className={styles.item} onClick={handleEnablePush} disabled={enablingPush}>
-          <i className="fa-solid fa-bell" />
-          {pushStatus ?? (enablingPush ? 'Açılıyor...' : 'Bildirimleri Aç')}
+          <i className={pushState.enabled ? 'fa-solid fa-bell' : 'fa-solid fa-bell-slash'} />
+          {pushStatus ?? (enablingPush ? 'Açılıyor...' : pushState.enabled ? 'Bildirimler açık ✓' : 'Bildirimleri Aç')}
         </button>
 
         <div className={styles.spacer} />

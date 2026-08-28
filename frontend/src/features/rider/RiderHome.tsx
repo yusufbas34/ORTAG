@@ -16,6 +16,8 @@ import { RideChatPanel } from '../../shared/ui/RideChatPanel';
 import { ActiveRideCard } from './ActiveRideCard';
 import { useDebouncedValue } from '../../shared/hooks/useDebouncedValue';
 import { useRideChat } from '../../shared/hooks/useRideChat';
+import { usePushStatus } from '../../shared/hooks/usePushStatus';
+import { NotificationSetupBanner } from '../../shared/ui/NotificationSetupBanner';
 import { apiClient } from '../../lib/apiClient';
 import { getCurrentPosition } from '../../lib/geolocation';
 import { getSocket } from '../../lib/socketClient';
@@ -69,6 +71,7 @@ export function RiderHome() {
   const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([]);
   const activeRideIdRef = useRef<string | null>(null);
   const chat = useRideChat(activeRide?.driverId ? activeRide.id : null);
+  const pushStatus = usePushStatus();
 
   const activeInputValue = activeField === 'pickup' ? pickupInput : activeField === 'dropoff' ? dropoffInput : '';
   const debouncedQuery = useDebouncedValue(activeInputValue, 400);
@@ -343,6 +346,8 @@ export function RiderHome() {
       <MapView pickup={pickup} dropoff={dropoff} routeCoordinates={routeCoordinates} />
 
       <BottomSheet>
+        {pushStatus.enabled === false && <NotificationSetupBanner onEnabled={pushStatus.refresh} />}
+
         <div className={styles.planHero} onClick={() => navigate('/rider/plan')} role="button" tabIndex={0}>
           <div className={styles.planHeroIcon}>
             <i className="fa-solid fa-calendar-plus" />

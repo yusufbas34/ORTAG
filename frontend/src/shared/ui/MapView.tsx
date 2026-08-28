@@ -2,6 +2,8 @@ import { useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Polyline, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { useMapStyle } from '../hooks/useMapStyle';
+import { MapStylePicker } from './MapStylePicker';
 import styles from './MapView.module.css';
 
 export interface MapCarMarker {
@@ -53,6 +55,7 @@ function FitBounds({ points }: { points: [number, number][] }) {
 }
 
 export function MapView({ pickup, dropoff, routeCoordinates, cars = [] }: MapViewProps) {
+  const { style, styleId, setStyleId } = useMapStyle();
   const boundsPoints: [number, number][] = [];
   if (pickup) boundsPoints.push([pickup.lat, pickup.lng]);
   if (dropoff) boundsPoints.push([dropoff.lat, dropoff.lng]);
@@ -62,10 +65,7 @@ export function MapView({ pickup, dropoff, routeCoordinates, cars = [] }: MapVie
   return (
     <div className={styles.mapWrapper}>
       <MapContainer center={DEFAULT_CENTER} zoom={13} zoomControl={false} className={styles.map}>
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> katkıda bulunanlar'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
+        <TileLayer key={style.id} attribution={style.attribution} url={style.url} maxZoom={style.maxZoom} />
 
         {cars.map((car) => (
           <Marker key={car.id} position={[car.lat, car.lng]} icon={carIcon} />
@@ -83,6 +83,8 @@ export function MapView({ pickup, dropoff, routeCoordinates, cars = [] }: MapVie
 
         <FitBounds points={boundsPoints} />
       </MapContainer>
+
+      <MapStylePicker value={styleId} onChange={setStyleId} className={styles.stylePicker} />
     </div>
   );
 }

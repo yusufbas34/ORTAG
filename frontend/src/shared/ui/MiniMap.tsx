@@ -1,7 +1,9 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Polyline, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { useMapStyle } from '../hooks/useMapStyle';
+import { MapStylePicker } from './MapStylePicker';
 import styles from './MiniMap.module.css';
 
 export interface RouteGeometry {
@@ -62,6 +64,8 @@ function FitBoundsOnce({ points }: { points: [number, number][] }) {
 // points (only relevant for rides created before route storage existed).
 // Pass `interactive` to allow pinch/scroll zoom and dragging.
 export function MiniMap({ pickup, dropoff, routeGeometry, driverLocation, height = 120, interactive = false }: MiniMapProps) {
+  const [expanded, setExpanded] = useState(false);
+  const { style, styleId, setStyleId } = useMapStyle();
   const pickupPoint: [number, number] = [pickup.lat, pickup.lng];
   const dropoffPoint: [number, number] = [dropoff.lat, dropoff.lng];
   const hasRoute = !!routeGeometry?.coordinates?.length;
@@ -71,20 +75,20 @@ export function MiniMap({ pickup, dropoff, routeGeometry, driverLocation, height
 
   const boundsPoints = driverLocation ? [...routePoints, [driverLocation.lat, driverLocation.lng] as [number, number]] : routePoints;
 
-  return (
-    <div className={[styles.wrapper, interactive ? styles.interactive : ''].join(' ')} style={{ height }}>
+  function renderMapContent(mapInteractive: boolean) {
+    return (
       <MapContainer
         center={pickupPoint}
         zoom={12}
-        zoomControl={interactive}
-        dragging={interactive}
-        scrollWheelZoom={interactive}
-        doubleClickZoom={interactive}
-        touchZoom={interactive}
+        zoomControl={mapInteractive}
+        dragging={mapInteractive}
+        scrollWheelZoom={mapInteractive}
+        doubleClickZoom={mapInteractive}
+        touchZoom={mapInteractive}
         attributionControl={false}
         className={styles.map}
       >
-        <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+        <TileLayer key={style.id} attribution={style.attribution} url={style.url} maxZoom={style.maxZoom} />
 
         {hasRoute ? (
           <>
@@ -102,6 +106,27 @@ export function MiniMap({ pickup, dropoff, routeGeometry, driverLocation, height
         {driverLocation && <Marker position={[driverLocation.lat, driverLocation.lng]} icon={carIcon} />}
         <FitBoundsOnce points={boundsPoints} />
       </MapContainer>
-    </div>
+    );
+  }
+
+  return (
+    <>
+      <div className={[styles.wrapper, interactive ? styles.interactive : ''].join(' ')} style={{ height }}>
+        {renderMapContent(interactive)}
+        <button className={styles.expandBtn} onClick={() => setExpanded(true)} aria-label="Haritayı büyüt" type="button">
+          <i className="fa-solid fa-expand" />
+        </button>
+      </div>
+
+      {expanded && (
+        <div className={styles.fullscreenOverlay}>
+          <button className={styles.fullscreenClose} onClick={() => setExpanded(false)} aria-label="Haritayı kapat" type="button">
+            <i className="fa-solid fa-xmark" />
+          </button>
+          <MapStylePicker value={styleId} onChange={setStyleId} className={styles.fullscreenStylePicker} />
+          <div className={styles.fullscreenMap}>{renderMapContent(true)}</div>
+        </div>
+      )}
+    </>
   );
 }

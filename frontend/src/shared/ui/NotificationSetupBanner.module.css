@@ -1,0 +1,53 @@
+.banner {
+  margin: 0 20px 14px;
+  padding: 12px 14px;
+  background: #FFFBEB;
+  border: 1px solid #FDE68A;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.banner i {
+  color: #B45309;
+  flex-shrink: 0;
+}
+
+.banner span {
+  flex: 1;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #92400E;
+}
+
+.enableBtn {
+  flex-shrink: 0;
+  border: none;
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  background: var(--primary);
+  color: #fff;
+  cursor: pointer;
+}
+
+.enableBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.closeBtn {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: none;
+  background: none;
+  color: #92400E;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

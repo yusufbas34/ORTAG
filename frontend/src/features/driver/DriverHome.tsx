@@ -7,7 +7,9 @@ import { getSocket } from '../../lib/socketClient';
 import { enablePushNotifications } from '../../lib/push';
 import { playAlert } from '../../lib/sound';
 import { useRideChat } from '../../shared/hooks/useRideChat';
+import { usePushStatus } from '../../shared/hooks/usePushStatus';
 import { RideChatPanel } from '../../shared/ui/RideChatPanel';
+import { NotificationSetupBanner } from '../../shared/ui/NotificationSetupBanner';
 import { IncomingOfferOverlay } from './IncomingOfferOverlay';
 import { DriverReservations } from './DriverReservations';
 import { MiniMap } from '../../shared/ui/MiniMap';
@@ -42,6 +44,7 @@ export function DriverHome() {
   const [pushEnabling, setPushEnabling] = useState(false);
   const locationWatchIdRef = useRef<number | null>(null);
   const chat = useRideChat(activeRide?.id ?? null);
+  const pushStatus = usePushStatus();
 
   useEffect(() => {
     apiClient.get<{ profile: DriverProfile }>('/drivers/me').then(({ profile }) => setProfile(profile));
@@ -233,6 +236,7 @@ export function DriverHome() {
     setPushEnabling(true);
     try {
       await enablePushNotifications();
+      pushStatus.refresh();
     } finally {
       setPushEnabling(false);
     }
@@ -255,13 +259,13 @@ export function DriverHome() {
             <i className="fa-solid fa-clock-rotate-left" />
           </button>
           <button
-            className={styles.bellBtn}
+            className={[styles.bellBtn, pushStatus.enabled ? styles.bellOn : ''].join(' ')}
             onClick={handleEnablePush}
             disabled={pushEnabling}
-            aria-label="Bildirimleri Aç"
-            title="Bildirimleri Aç"
+            aria-label={pushStatus.enabled ? 'Bildirimler açık' : 'Bildirimleri Aç'}
+            title={pushStatus.enabled ? 'Bildirimler açık' : 'Bildirimleri Aç'}
           >
-            <i className="fa-solid fa-bell" />
+            <i className={pushStatus.enabled ? 'fa-solid fa-bell' : 'fa-solid fa-bell-slash'} />
           </button>
           <span className={[styles.toggleLabel, profile?.isAvailable ? styles.online : styles.offline].join(' ')}>
             {profile?.isAvailable ? 'Çevrimiçi' : 'Çevrimdışı'}
@@ -277,6 +281,8 @@ export function DriverHome() {
       </div>
 
       {locationWarning && <p className={styles.locationWarning}>{locationWarning}</p>}
+
+      {pushStatus.enabled === false && <NotificationSetupBanner onEnabled={pushStatus.refresh} />}
 
       <div className={styles.body}>
         {activeRide ? (

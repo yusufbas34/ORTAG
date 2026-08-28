@@ -9,6 +9,13 @@
   height: 100%;
 }
 
+.stylePicker {
+  position: absolute;
+  top: calc(var(--safe-top) + 76px);
+  right: 20px;
+  z-index: 5;
+}
+
 .pinIconWrapper {
   background: transparent;
   border: none;
